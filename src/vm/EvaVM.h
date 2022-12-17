@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "src/bytecode/OpCode.h"
+#include "src/vm/Logger.h"
 
 /**
 * Reads the current byte in the bytecode
@@ -42,9 +43,13 @@ class EvaVM {
     */
     void eval() {
         for (;;) {
-            switch (READ_BYTE()) {
+            auto opcode = READ_BYTE();
+            log(opcode)
+            switch (opcode) {
                 case OP_HALT:
                     return;
+                default:
+                    DIE << "Unknown opcode: " << std::hex << opcode;
             }
         }
     }
