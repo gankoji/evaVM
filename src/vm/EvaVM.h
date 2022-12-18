@@ -4,10 +4,12 @@
 #include <string>
 #include <vector>
 #include <array>
+#include <memory>
 
 #include "src/bytecode/OpCode.h"
 #include "src/vm/Logger.h"
 #include "src/vm/EvaValue.h"
+#include "src/parser/EvaParser.h"
 
 #define STACK_LIMIT 512
 
@@ -40,7 +42,7 @@
 */
 class EvaVM {
     public:
-        EvaVM() {}
+        EvaVM() : parser (std::make_unique<syntax::EvaParser>()) {}
 
     /**
      * Pushes a value onto the stack
@@ -69,7 +71,7 @@ class EvaVM {
     */
     EvaValue exec(const std::string &program) {
         // 1. Parse the program
-        // auto ast = parser->parse(program)
+        auto ast = parser->parse(program);
 
         // 2. Compile program to Eva bytecode
         // code = compiler->compile(ast)
@@ -119,7 +121,7 @@ class EvaVM {
                             auto s2 = AS_CPPSTRING(op2);
                             push(ALLOC_STRING(s1+s2));
                         }
-                        
+
                         break;
                     }
                 case OP_SUB:
@@ -142,6 +144,11 @@ class EvaVM {
             }
         }
     }
+
+    /**
+     * Parser
+    */
+    std::unique_ptr<syntax::EvaParser> parser;
 
     /**
      * Instruction pointer (aka Program counter)
