@@ -17,6 +17,7 @@
 */
 #define READ_BYTE() *ip++
 #define GET_CONST() constants[READ_BYTE()]
+
 /**
 * Eva Virtual Machine.
 */
