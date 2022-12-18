@@ -18,9 +18,8 @@ FetchContent_MakeAvailable(googletest)
 add_subdirectory(test)
 
 # Build our actual program
-if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-add_compile_options(-Wall -Wpedantic -ggdb3)
-endif()
+set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
+add_compile_options(-Wall -ggdb3)
 
 include_directories(./)
 add_executable(eva-vm EvaVM.cpp)

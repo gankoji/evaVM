@@ -48,7 +48,7 @@ struct EvaValue {
 */
 #define NUMBER(value) ((EvaValue){.type = EvaValueType::NUMBER, .number = value})
 #define ALLOC_STRING(value) \
-    ((EvaValue){EvaValueType::OBJECT, .object = (Object*)new StringObject(value)})
+    ((EvaValue){.type = EvaValueType::OBJECT, .object = (Object*)new StringObject(value)})
 
 /**
  * Accessors

@@ -72,7 +72,9 @@ class EvaVM {
     EvaValue exec(const std::string &program) {
         // 1. Parse the program
         auto ast = parser->parse(program);
-
+        log(program)
+        // log(ast)
+        ast.print();
         // 2. Compile program to Eva bytecode
         // code = compiler->compile(ast)
 

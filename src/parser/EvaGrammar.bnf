@@ -66,6 +66,27 @@ struct Exp {
     
     // Lists
     Exp(std::vector<Exp> list) : type(ExpType::LIST), list(list) {}
+    
+    void print() {
+        switch(type) {
+            case ExpType::NUMBER: {
+                printf("[%d] ", number);
+                break;
+            }
+            case ExpType::STRING: 
+            case ExpType::SYMBOL: {
+                printf("[%s] ", string.c_str());
+                break;
+            }
+            case ExpType::LIST: {
+                printf("(");
+                for (auto li: list) {
+                    li.print();
+                }
+                printf(")\n");
+            }
+        }
+    }
 };
 
 using Value = Exp;
