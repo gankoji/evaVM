@@ -10,6 +10,7 @@
 #include "src/vm/Logger.h"
 #include "src/vm/EvaValue.h"
 #include "src/parser/EvaParser.h"
+#include "src/compiler/EvaCompiler.h"
 
 #define STACK_LIMIT 512
 
@@ -23,7 +24,7 @@
  * Gets a constant at the index in pool
  * defined by the next bytecode
 */
-#define GET_CONST() constants[READ_BYTE()]
+#define GET_CONST() co->constants[READ_BYTE()]
 
 /**
  * Binary operation
@@ -42,7 +43,9 @@
 */
 class EvaVM {
     public:
-        EvaVM() : parser (std::make_unique<syntax::EvaParser>()) {}
+        EvaVM()
+            :   parser (std::make_unique<syntax::EvaParser>()),
+                compiler(std::make_unique<EvaCompiler>()) {}
 
     /**
      * Pushes a value onto the stack
@@ -72,21 +75,19 @@ class EvaVM {
     EvaValue exec(const std::string &program) {
         // 1. Parse the program
         auto ast = parser->parse(program);
-        log(program)
-        // log(ast)
-        ast.print();
+
         // 2. Compile program to Eva bytecode
-        // code = compiler->compile(ast)
+        co = compiler->compile(ast);
 
         // constants.push_back(NUMBER(100));
         // constants.push_back(NUMBER(42));
         // code = {OP_CONST, 0, OP_CONST, 1, OP_MUL, OP_HALT};
 
-        constants.push_back(ALLOC_STRING("Henlo, "));
-        constants.push_back(ALLOC_STRING("world!"));
-        code = {OP_CONST, 0, OP_CONST, 1, OP_ADD, OP_HALT};
+        // constants.push_back(ALLOC_STRING("Henlo, "));
+        // constants.push_back(ALLOC_STRING("world!"));
+        // code = {OP_CONST, 0, OP_CONST, 1, OP_ADD, OP_HALT};
         // Set instruction pointer to the beginning, sp to top of stack
-        ip = &code[0];
+        ip = &co->code[0];
         sp = stack.begin();
 
         return eval();
@@ -153,6 +154,11 @@ class EvaVM {
     std::unique_ptr<syntax::EvaParser> parser;
 
     /**
+     * Compiler
+    */
+    std::unique_ptr<EvaCompiler> compiler;
+
+    /**
      * Instruction pointer (aka Program counter)
     */
     uint8_t* ip;
@@ -168,14 +174,10 @@ class EvaVM {
     std::array<EvaValue, STACK_LIMIT> stack;
 
     /**
-     * Bytecode
+     * Code object
     */
-    std::vector<uint8_t> code;
-    
-    /**
-     * Constants pool
-    */
-    std::vector<EvaValue> constants;
+    CodeObject* co;
+
 };
 
 #endif
