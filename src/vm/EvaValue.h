@@ -54,7 +54,16 @@ struct EvaValue {
  * Accessors
 */
 #define AS_NUMBER(evaValue) ((double)(evaValue).number)
+#define AS_OBJECT(evaValue) ((Object*)(evaValue).object)
 #define AS_STRING(evaValue) ((StringObject*)(evaValue).object)
 #define AS_CPPSTRING(evaValue) (AS_STRING(evaValue)->string)
 
+/**
+ * Predicates
+*/
+#define IS_NUMBER(evaValue) ((evaValue).type == EvaValueType::NUMBER)
+#define IS_OBJECT(evaValue) ((evaValue).type == EvaValueType::OBJECT)
+#define IS_OBJECT_TYPE(evaValue, objectType) \
+    (IS_OBJECT(evaValue) && AS_OBJECT(evaValue)->type == objectType)
+#define IS_STRING(evaValue) IS_OBJECT_TYPE(evaValue, ObjectType::STRING)
 #endif /* __EvaValue_h */

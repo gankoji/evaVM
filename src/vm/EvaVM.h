@@ -78,8 +78,9 @@ class EvaVM {
         // constants.push_back(NUMBER(42));
         // code = {OP_CONST, 0, OP_CONST, 1, OP_MUL, OP_HALT};
 
-        constants.push_back(ALLOC_STRING("Henlo"));
-        code = {OP_CONST, 0, OP_HALT};
+        constants.push_back(ALLOC_STRING("Henlo, "));
+        constants.push_back(ALLOC_STRING("world!"));
+        code = {OP_CONST, 0, OP_CONST, 1, OP_ADD, OP_HALT};
         // Set instruction pointer to the beginning, sp to top of stack
         ip = &code[0];
         sp = stack.begin();
@@ -105,7 +106,20 @@ class EvaVM {
                     }
                 case OP_ADD:
                     {
-                        BINARY_OP(+);
+                        auto op2 = pop();
+                        auto op1 = pop();
+
+                        // Numeric addition:
+                        if (IS_NUMBER(op1) && IS_NUMBER(op2)) {
+                            auto v1 = AS_NUMBER(op1);
+                            auto v2 = AS_NUMBER(op2);
+                            push(NUMBER(v1+v2));
+                        } else if (IS_STRING(op1) && IS_STRING(op2)) {
+                            auto s1 = AS_CPPSTRING(op1);
+                            auto s2 = AS_CPPSTRING(op2);
+                            push(ALLOC_STRING(s1+s2));
+                        }
+                        
                         break;
                     }
                 case OP_SUB:
