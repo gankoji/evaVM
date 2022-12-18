@@ -31,3 +31,6 @@
 *.out
 *.app
 eva-vm
+
+# CMake outputs
+build/

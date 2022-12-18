@@ -15,19 +15,20 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googletest)
 
 # My tests
-enable_testing()
-
-add_executable(
-  hello_test
-  hello_test.cpp
-)
-target_link_libraries(
-  hello_test
-  GTest::gtest_main
-)
-
-include(GoogleTest)
-gtest_discover_tests(hello_test)
+#enable_testing()
+#
+#add_executable(
+#  hello_test
+#  hello_test.cpp
+#)
+#target_link_libraries(
+#  hello_test
+#  GTest::gtest_main
+#)
+#
+#include(GoogleTest)
+#gtest_discover_tests(hello_test)
+add_subdirectory(test)
 
 # Is this a comment? Looks like it
 # Build our actual program
