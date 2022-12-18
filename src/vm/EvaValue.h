@@ -21,5 +21,6 @@ struct EvaValue {
 // ------------------------
 // Constructors:
 #define NUMBER(value) ((EvaValue){.type = EvaValueType::Number, .number = value})
+#define AS_NUMBER(evaValue) ((double)(evaValue).number)
 
 #endif /* __EvaValue_h */

@@ -58,7 +58,7 @@ class EvaVM {
 
         sp = stack.begin();
 
-        constants.push_back(NUMBER(42));
+        constants.push_back(NUMBER(100));
         code = {OP_CONST, 0, OP_HALT};
 
         // Set instruction pointer to the beginning

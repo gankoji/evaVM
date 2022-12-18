@@ -13,7 +13,7 @@ int main(int argc, char const *argv[]) {
         42
     )");
 
-    log(result.number);
+    log(AS_NUMBER(result));
 
     std::cout << "All done!\n";
 
