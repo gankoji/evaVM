@@ -1,5 +1,5 @@
 /**
-* Logger and error reporter
+ * Logger and error reporter
 */
 #ifndef __Logger_h
 #define __Logger_h

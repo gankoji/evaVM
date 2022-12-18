@@ -12,21 +12,38 @@
 #define STACK_LIMIT 512
 
 /**
-* Reads the current byte in the bytecode
-* and advances the instruction pointer
+ * Reads the current byte in the bytecode
+ * and advances the instruction pointer
 */
 #define READ_BYTE() *ip++
+
+/**
+ * Gets a constant at the index in pool
+ * defined by the next bytecode
+*/
 #define GET_CONST() constants[READ_BYTE()]
 
 /**
-* Eva Virtual Machine.
+ * Binary operation
+*/
+#define BINARY_OP(op) \
+    do {\
+        auto op1 = AS_NUMBER(pop()); \
+        auto op2 = AS_NUMBER(pop()); \
+        auto result = op1 op op2; \
+        push(NUMBER(result)); \
+    } while (false)
+
+
+/**
+ * Eva Virtual Machine.
 */
 class EvaVM {
     public:
         EvaVM() {}
 
     /**
-    * Pushes a value onto the stack
+     * Pushes a value onto the stack
     */
     void push(const EvaValue& value) {
         if ((size_t)(sp - stack.begin()) == STACK_LIMIT) {
@@ -37,7 +54,7 @@ class EvaVM {
     }
 
     /**
-    * Pops a value from the stack
+     * Pops a value from the stack
     */
     EvaValue pop() {
         if (sp == stack.begin()) {
@@ -48,7 +65,7 @@ class EvaVM {
     }
 
     /**
-    * Executes a program
+     * Executes a program
     */
     EvaValue exec(const std::string &program) {
         // 1. Parse the program
@@ -57,33 +74,55 @@ class EvaVM {
         // 2. Compile program to Eva bytecode
         // code = compiler->compile(ast)
 
-        sp = stack.begin();
+        // constants.push_back(NUMBER(100));
+        // constants.push_back(NUMBER(42));
+        // code = {OP_CONST, 0, OP_CONST, 1, OP_MUL, OP_HALT};
 
-        constants.push_back(NUMBER(100));
-        constants.push_back(NUMBER(42));
-        code = {OP_CONST, 0, OP_CONST, 1, OP_HALT};
-
-        // Set instruction pointer to the beginning
+        constants.push_back(ALLOC_STRING("Henlo"));
+        code = {OP_CONST, 0, OP_HALT};
+        // Set instruction pointer to the beginning, sp to top of stack
         ip = &code[0];
+        sp = stack.begin();
 
         return eval();
     }
     
     /**
-    * Main eval loop
+     * Main eval loop
     */
     EvaValue eval() {
         for (;;) {
             auto opcode = READ_BYTE();
-            EvaValue constant;
             opcode_pretty(opcode);
             switch (opcode) {
                 case OP_HALT:
                     return pop();
                 case OP_CONST:
-                    constant = GET_CONST();
-                    push(constant);
-                    break;
+                    {
+                        EvaValue constant = GET_CONST();
+                        push(constant);
+                        break;
+                    }
+                case OP_ADD:
+                    {
+                        BINARY_OP(+);
+                        break;
+                    }
+                case OP_SUB:
+                    {
+                        BINARY_OP(-);
+                        break;
+                    }
+                case OP_MUL:
+                    {
+                        BINARY_OP(*);
+                        break;
+                    }
+                case OP_DIV:
+                    {
+                        BINARY_OP(/);
+                        break;
+                    }
                 default:
                     DIE << "Unknown opcode: " << std::hex << opcode;
             }
@@ -91,27 +130,27 @@ class EvaVM {
     }
 
     /**
-    * Instruction pointer (aka Program counter)
+     * Instruction pointer (aka Program counter)
     */
     uint8_t* ip;
     
     /**
-    * Stack pointer
+     * Stack pointer
     */
     EvaValue* sp;
 
     /**
-    * Operands stack.
+     * Operands stack.
     */
     std::array<EvaValue, STACK_LIMIT> stack;
 
     /**
-    * Bytecode
+     * Bytecode
     */
     std::vector<uint8_t> code;
     
     /**
-    * Constants pool
+     * Constants pool
     */
     std::vector<EvaValue> constants;
 };

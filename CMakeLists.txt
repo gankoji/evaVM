@@ -17,7 +17,10 @@ FetchContent_MakeAvailable(googletest)
 # My tests
 add_subdirectory(test)
 
-# Is this a comment? Looks like it
 # Build our actual program
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+add_compile_options(-Wall -Wpedantic -ggdb3)
+endif()
+
 include_directories(./)
 add_executable(eva-vm EvaVM.cpp)
