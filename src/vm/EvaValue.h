@@ -1,6 +1,8 @@
 #ifndef __EvaValue_h
 #define __EvaValue_h
 
+#include "src/vm/Logger.h"
+
 /**
  * Eva value type
 */
@@ -83,4 +85,39 @@ struct CodeObject : public Object {
 #define IS_STRING(evaValue) IS_OBJECT_TYPE(evaValue, ObjectType::STRING)
 #define IS_CODE(evaValue) IS_OBJECT_TYPE(evaValue, ObjectType::CODE)
 
+/**
+ * Output stream
+*/
+std::string evaValueToTypeString(const EvaValue &evaValue) {
+    if (IS_NUMBER(evaValue)) {
+        return "NUMBER";
+    } else if (IS_STRING(evaValue)) {
+        return "STRING";
+    } else if (IS_CODE(evaValue)) {
+        return "CODE";
+    } else {
+        DIE << "evaValueToTypeString: unknown type " << (int)evaValue.type;
+        return "";
+    }
+}
+
+std::string evaValueToConstantString(const EvaValue &evaValue) {
+    std::stringstream ss;
+    if (IS_NUMBER(evaValue)) {
+        ss << evaValue.number;
+    } else if (IS_STRING(evaValue)) {
+        ss << '"' << AS_CPPSTRING(evaValue) << '"';
+    } else if (IS_CODE(evaValue)) {
+        auto code = AS_CODE(evaValue);
+        ss << "code: " << code << ": " << code->name;
+    } else {
+        DIE << "evaValueToTypeString: unknown type " << (int)evaValue.type;
+    }   
+    return ss.str();
+}
+
+std::ostream& operator<<(std::ostream &os, const EvaValue &evaValue) {
+    return os << "EvaValue (" << evaValueToTypeString(evaValue)
+                << "): " << evaValueToConstantString(evaValue);
+}
 #endif /* __EvaValue_h */

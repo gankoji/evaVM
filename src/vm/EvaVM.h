@@ -79,13 +79,6 @@ class EvaVM {
         // 2. Compile program to Eva bytecode
         co = compiler->compile(ast);
 
-        // constants.push_back(NUMBER(100));
-        // constants.push_back(NUMBER(42));
-        // code = {OP_CONST, 0, OP_CONST, 1, OP_MUL, OP_HALT};
-
-        // constants.push_back(ALLOC_STRING("Henlo, "));
-        // constants.push_back(ALLOC_STRING("world!"));
-        // code = {OP_CONST, 0, OP_CONST, 1, OP_ADD, OP_HALT};
         // Set instruction pointer to the beginning, sp to top of stack
         ip = &co->code[0];
         sp = stack.begin();
