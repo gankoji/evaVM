@@ -15,7 +15,5 @@ int main(int argc, char const *argv[]) {
 
     log(result);
 
-    std::cout << "All done!\n";
-
     return 0;
 }

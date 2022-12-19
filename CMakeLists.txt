@@ -2,6 +2,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(eva-vm)
 
+enable_testing()
 # Google test
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED)
