@@ -63,7 +63,15 @@ class EvaCompiler {
                     emit(stringConstIdx(exp.string));
                     break;
                 case ExpType::SYMBOL:
-                    DIE << "ExpType::SYMBOL: unimplemented";
+                    /**
+                     * Boolean
+                    */
+                    if (exp.string == "true" || exp.string == "false") {
+                        emit(OP_CONST);
+                        emit(booleanConstIdx(exp.string == "true" ? true : false));
+                    } else {
+                        // It's a variable. TODO
+                    }
                     break;
                 case ExpType::LIST:
                     auto tag = exp.list[0];
@@ -104,6 +112,14 @@ class EvaCompiler {
         */
         size_t stringConstIdx(const std::string& value) {
             ALLOC_CONST(IS_STRING, AS_CPPSTRING, ALLOC_STRING, value);
+            return co->constants.size()-1;
+        }
+
+        /**
+         * Allocates a boolean constant
+        */
+        size_t booleanConstIdx(const bool value) {
+            ALLOC_CONST(IS_BOOLEAN, AS_BOOLEAN, BOOLEAN, value);
             return co->constants.size()-1;
         }
 
