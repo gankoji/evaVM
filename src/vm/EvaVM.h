@@ -31,8 +31,8 @@
 */
 #define BINARY_OP(op) \
     do {\
-        auto op1 = AS_NUMBER(pop()); \
         auto op2 = AS_NUMBER(pop()); \
+        auto op1 = AS_NUMBER(pop()); \
         auto result = op1 op op2; \
         push(NUMBER(result)); \
     } while (false)
