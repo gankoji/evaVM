@@ -4,6 +4,9 @@
 #ifndef __EvaCompiler_h
 #define __EvaCompiler_h
 
+#include <map>
+#include <string>
+
 #include "src/parser/EvaParser.h"
 #include "src/vm/EvaValue.h"
 #include "src/bytecode/OpCode.h"
@@ -87,6 +90,12 @@ class EvaCompiler {
                             GEN_BINARY_OP(OP_MUL);
                         } else if (op == "/") {
                             GEN_BINARY_OP(OP_DIV);
+                        } else if (compareOps_.count(op) != 0) {
+                            gen(exp.list[1]);
+                            gen(exp.list[2]);
+                            
+                            emit(OP_COMPARE);
+                            emit(compareOps_[op]);
                         }
                     }
                     break; //TODO
@@ -127,6 +136,18 @@ class EvaCompiler {
          * Compiled code object
         */
         CodeObject* co;
+        
+        /**
+         * Comparison operators map
+        */
+        static std::map<std::string, uint8_t> compareOps_;
+};
+
+/**
+ * Comparison operators map
+*/
+std::map<std::string, uint8_t> EvaCompiler::compareOps_ = {
+    {"<", 0}, {">", 1}, {"==", 2}, {"<=", 3}, {">=", 4}, {"!=", 5},
 };
 
 #endif /* __EvaCompiler_h */
