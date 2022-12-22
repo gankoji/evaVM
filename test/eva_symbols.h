@@ -1,7 +1,8 @@
 #include <gtest/gtest.h>
 #include "src/vm/EvaVM.h"
 
-TEST(EvaSymbols, BooleanTrue) {
+TEST(EvaSymbols, BooleanTrue)
+{
     EvaVM vm;
 
     auto result = vm.exec(R"(
@@ -10,7 +11,8 @@ TEST(EvaSymbols, BooleanTrue) {
     EXPECT_TRUE(result.boolean);
 }
 
-TEST(EvaSymbols, BooleanFalse) {
+TEST(EvaSymbols, BooleanFalse)
+{
     EvaVM vm;
     auto result = vm.exec(R"(
         false

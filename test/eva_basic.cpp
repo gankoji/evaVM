@@ -4,6 +4,7 @@
 #include "comparison_ops.h"
 #include "branching.h"
 
-TEST(EvaBasic, SanityCheck) {
+TEST(EvaBasic, SanityCheck)
+{
     EXPECT_EQ("hi", "hi");
 }

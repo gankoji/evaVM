@@ -2,7 +2,8 @@
 #include "src/vm/EvaVM.h"
 #include "src/vm/Logger.h"
 
-TEST(ComparisonOps, LessThan) {
+TEST(ComparisonOps, LessThan)
+{
     EvaVM vm;
 
     auto result = vm.exec(R"(
@@ -12,7 +13,8 @@ TEST(ComparisonOps, LessThan) {
     EXPECT_TRUE(result.boolean);
 }
 
-TEST(ComparisonOps, GreaterThan) {
+TEST(ComparisonOps, GreaterThan)
+{
     EvaVM vm;
 
     auto result = vm.exec(R"(
@@ -20,7 +22,7 @@ TEST(ComparisonOps, GreaterThan) {
     )");
     log(result);
     EXPECT_TRUE(result.boolean);
-    
+
     result = vm.exec(R"(
         (> 1 2)
     )");
@@ -28,7 +30,8 @@ TEST(ComparisonOps, GreaterThan) {
     EXPECT_FALSE(result.boolean);
 }
 
-TEST(ComparisonOps, Equal) {
+TEST(ComparisonOps, Equal)
+{
     EvaVM vm;
 
     auto result = vm.exec(R"(
@@ -38,7 +41,8 @@ TEST(ComparisonOps, Equal) {
     EXPECT_TRUE(result.boolean);
 }
 
-TEST(ComparisonOps, LessEq) {
+TEST(ComparisonOps, LessEq)
+{
     EvaVM vm;
 
     auto result = vm.exec(R"(
@@ -48,7 +52,8 @@ TEST(ComparisonOps, LessEq) {
     EXPECT_TRUE(result.boolean);
 }
 
-TEST(ComparisonOps, GreaterEq) {
+TEST(ComparisonOps, GreaterEq)
+{
     EvaVM vm;
 
     auto result = vm.exec(R"(
@@ -59,7 +64,8 @@ TEST(ComparisonOps, GreaterEq) {
     EXPECT_TRUE(result.boolean);
 }
 
-TEST(ComparisonOps, NotEq) {
+TEST(ComparisonOps, NotEq)
+{
     EvaVM vm;
 
     auto result = vm.exec(R"(

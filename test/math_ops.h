@@ -2,7 +2,8 @@
 #include "src/vm/EvaVM.h"
 #include "src/vm/Logger.h"
 
-TEST(MathOps, AddTwo) {
+TEST(MathOps, AddTwo)
+{
     EvaVM vm;
 
     auto result = vm.exec(R"(
@@ -12,7 +13,8 @@ TEST(MathOps, AddTwo) {
     EXPECT_EQ(result.number, 5);
 }
 
-TEST(MathOps, AddThree) {
+TEST(MathOps, AddThree)
+{
     EvaVM vm;
 
     auto result = vm.exec(R"(
@@ -22,7 +24,8 @@ TEST(MathOps, AddThree) {
     EXPECT_EQ(result.number, 6);
 }
 
-TEST(MathOps, SubTwo) {
+TEST(MathOps, SubTwo)
+{
     EvaVM vm;
 
     auto result = vm.exec(R"(
@@ -32,7 +35,8 @@ TEST(MathOps, SubTwo) {
     EXPECT_EQ(result.number, 1);
 }
 
-TEST(MathOps, MulTwo) {
+TEST(MathOps, MulTwo)
+{
     EvaVM vm;
 
     auto result = vm.exec(R"(
@@ -42,7 +46,8 @@ TEST(MathOps, MulTwo) {
     EXPECT_EQ(result.number, 16);
 }
 
-TEST(MathOps, DivTwo) {
+TEST(MathOps, DivTwo)
+{
     EvaVM vm;
 
     auto result = vm.exec(R"(
