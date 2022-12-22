@@ -1,5 +1,9 @@
-#ifndef __EvaVM_h
-#define __EvaVM_h
+/**
+ * Eva Bytecode Interpreter
+*/
+
+#ifndef EvaVM_h
+#define EvaVM_h
 
 #include <string>
 #include <vector>

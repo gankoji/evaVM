@@ -1,5 +1,9 @@
-#ifndef __EvaValue_h
-#define __EvaValue_h
+/**
+ * Eva Value Types
+*/
+
+#ifndef EvaValue_h
+#define EvaValue_h
 
 #include "src/vm/Logger.h"
 

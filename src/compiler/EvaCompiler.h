@@ -1,8 +1,9 @@
 /**
  * Eva Compiler
 */
-#ifndef __EvaCompiler_h
-#define __EvaCompiler_h
+
+#ifndef EvaCompiler_h
+#define EvaCompiler_h
 
 #include <map>
 #include <string>
