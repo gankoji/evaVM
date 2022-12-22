@@ -12,43 +12,60 @@ TEST(ComparisonOps, LessThan) {
     EXPECT_TRUE(result.boolean);
 }
 
-TEST(ComparisonOps, AddThree) {
+TEST(ComparisonOps, GreaterThan) {
     EvaVM vm;
 
     auto result = vm.exec(R"(
-        (+ 2 (+ 3 1))
+        (> 2 1)
     )");
     log(result);
-    EXPECT_EQ(result.number, 6);
+    EXPECT_TRUE(result.boolean);
+    
+    result = vm.exec(R"(
+        (> 1 2)
+    )");
+    log(result);
+    EXPECT_FALSE(result.boolean);
 }
 
-TEST(ComparisonOps, SubTwo) {
+TEST(ComparisonOps, Equal) {
     EvaVM vm;
 
     auto result = vm.exec(R"(
-        (- 2 1)
+        (== 2 2)
     )");
     log(result);
-    EXPECT_EQ(result.number, 1);
+    EXPECT_TRUE(result.boolean);
 }
 
-TEST(ComparisonOps, MulTwo) {
+TEST(ComparisonOps, LessEq) {
     EvaVM vm;
 
     auto result = vm.exec(R"(
-        (* 2 8)
+        (<= 2 8)
     )");
     log(result);
-    EXPECT_EQ(result.number, 16);
+    EXPECT_TRUE(result.boolean);
 }
 
-TEST(ComparisonOps, DivTwo) {
+TEST(ComparisonOps, GreaterEq) {
     EvaVM vm;
 
     auto result = vm.exec(R"(
-        (/ 8 2)
+        (>= 8 2)
     )");
 
     log(result);
-    EXPECT_EQ(result.number, 4);
+    EXPECT_TRUE(result.boolean);
+}
+
+TEST(ComparisonOps, NotEq) {
+    EvaVM vm;
+
+    auto result = vm.exec(R"(
+        (!= 8 2)
+    )");
+
+    log(result);
+    EXPECT_TRUE(result.boolean);
 }

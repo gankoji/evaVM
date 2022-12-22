@@ -21,6 +21,16 @@
 #define READ_BYTE() *ip++
 
 /**
+ * Reads a short word (2 bytes) from bytecode
+*/
+#define READ_SHORT() (ip +=2, (uint16_t)((ip[-2] << 8) | ip[-1]))
+
+/**
+ * Converts bytecode index to a pointer
+*/
+#define TO_ADDRESS(index) &co->code[index]
+
+/**
  * Gets a constant at the index in pool
  * defined by the next bytecode
 */
@@ -116,6 +126,9 @@ class EvaVM {
         // Set instruction pointer to the beginning, sp to top of stack
         ip = &co->code[0];
         sp = stack.begin();
+        
+        // Emit the disassembly
+        compiler->disassembleBytecode();
 
         return eval();
     }
@@ -126,7 +139,6 @@ class EvaVM {
     EvaValue eval() {
         for (;;) {
             auto opcode = READ_BYTE();
-            opcode_pretty(opcode);
             switch (opcode) {
                 case OP_HALT:
                     return pop();
@@ -180,6 +192,20 @@ class EvaVM {
                         COMPARE_VALUES(op, s1, s2);
                     }
                     
+                    break;
+                }
+                case OP_JMP_IF_FALSE: {
+                    auto cond = AS_BOOLEAN(pop());
+                    auto address = READ_SHORT();
+
+                    if (!cond) {
+                        ip = TO_ADDRESS(address);
+                    }
+
+                    break;
+                }
+                case OP_JMP: {
+                    ip = TO_ADDRESS(READ_SHORT());
                     break;
                 }
                 default:

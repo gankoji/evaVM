@@ -7,9 +7,10 @@
 #include <map>
 #include <string>
 
+#include "src/bytecode/OpCode.h"
+#include "src/disassembler/EvaDisassembler.h"
 #include "src/parser/EvaParser.h"
 #include "src/vm/EvaValue.h"
-#include "src/bytecode/OpCode.h"
 #include "src/vm/Logger.h"
 
 // Allocates new constant in the constant pool
@@ -38,7 +39,7 @@
 */
 class EvaCompiler {
     public:
-        EvaCompiler() {}
+        EvaCompiler() : disassembler(std::make_unique<EvaDisassembler>()){}
 
         /**
          * Main compile API
@@ -97,12 +98,61 @@ class EvaCompiler {
                             emit(OP_COMPARE);
                             emit(compareOps_[op]);
                         }
+
+                        // Branch instruction
+                        // (if <test> <consequent> <alternate>)
+                        else if (op == "if") {
+                            // Emit <test>
+                            gen(exp.list[1]);
+                            emit(OP_JMP_IF_FALSE);
+                            
+                            // Else branch. Init with 0 address, will be
+                            // patched.
+                            emit(0);
+                            emit(0);
+                            
+                            auto elseJmpAddr = getOffset() - 2;
+                            
+                            // Emit <consequent>
+                            gen(exp.list[2]);
+                            emit(OP_JMP);
+                            
+                            // 2-byte address
+                            emit(0);
+                            emit(0);
+                            auto endAddr = getOffset() - 2;
+                            
+                            // Path the else branch address
+                            auto elseBranchAddr = getOffset();
+                            patchJumpAddress(elseJmpAddr, elseBranchAddr);
+                            
+                            // Emit <alternate> if we have it
+                            if (exp.list.size() == 4) {
+                                gen(exp.list[3]);
+                            }
+                            
+                            // Patch the end.
+                            auto endBranchAddr = getOffset();
+                            patchJumpAddress(endAddr, endBranchAddr);
+                        }
                     }
                     break; //TODO
             }
         }
         
+        /**
+         * Disassemble all compilation units
+        */
+        void disassembleBytecode() {
+            disassembler->disassemble(co);
+        }
+
     private:
+        /**
+         * Disassembler
+        */
+        std::unique_ptr<EvaDisassembler> disassembler;
+
         /**
          * Emits bytecode
         */
@@ -133,6 +183,22 @@ class EvaCompiler {
         }
 
         /**
+         * Writes byte at offset in code object
+        */
+        void writeByteAtOffset(size_t offset, uint8_t value) {
+            co->code[offset] = value;
+        }
+
+        /**
+         * Patches jump addresses for branching. Implicitly assumes that
+         * addresses are two bytes long. 
+        */
+        void patchJumpAddress(size_t offset, uint16_t value) {
+            writeByteAtOffset(offset, (value >> 8) & 0xFF);
+            writeByteAtOffset(offset+1, value & 0xFF);
+        }
+
+        /**
          * Compiled code object
         */
         CodeObject* co;
@@ -141,6 +207,11 @@ class EvaCompiler {
          * Comparison operators map
         */
         static std::map<std::string, uint8_t> compareOps_;
+        
+        /**
+         * Returns current bytecode offset.
+        */
+        uint16_t getOffset() { return (uint16_t)co->code.size(); }
 };
 
 /**
