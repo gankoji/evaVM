@@ -58,6 +58,12 @@ struct EvaValue
     };
 };
 
+struct LocalVar
+{
+    std::string name;
+    size_t scopeLevel;
+};
+
 /**
  * Code object
  */
@@ -68,6 +74,28 @@ struct CodeObject : public Object
     std::string name;
     std::vector<EvaValue> constants;
     std::vector<uint8_t> code;
+    size_t scopeLevel = 0;
+    std::vector<LocalVar> locals;
+
+    void addLocal(const std::string &name)
+    {
+        locals.push_back({name, scopeLevel});
+    }
+
+    int getLocalIndex(const std::string &name)
+    {
+        if (locals.size() > 0)
+        {
+            for (auto i = (int)locals.size() - 1; i >= 0; i--)
+            {
+                if (locals[i].name == name)
+                {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
 };
 
 /**

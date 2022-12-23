@@ -8,14 +8,20 @@
  */
 int main(int argc, char const *argv[])
 {
+    std::cout << "Hi, this is Eva." << std::endl;
+
     EvaVM vm;
 
     auto result = vm.exec(R"(
-        (var z 5)
-        (set z (+ x 10))
+        (var z 10)
+        (set z 100)
+        (begin
+            (var z 200)
+        )
         z
     )");
 
+    printf("Yeah we done.\n");
     log(result);
 
     return 0;

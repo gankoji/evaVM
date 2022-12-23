@@ -46,6 +46,9 @@
  * Local vars
  */
 #define OP_POP 0x0B
+#define OP_GET_LOCAL 0x0C
+#define OP_SET_LOCAL 0x0D
+#define OP_SCOPE_EXIT 0x0E
 
 // --------------------
 #define OP_STR(op) \
@@ -68,8 +71,11 @@ std::string opcodeToString(uint8_t opcode)
         OP_STR(GET_GLOBAL);
         OP_STR(SET_GLOBAL);
         OP_STR(POP);
+        OP_STR(GET_LOCAL);
+        OP_STR(SET_LOCAL);
+        OP_STR(SCOPE_EXIT);
     default:
-        DIE << "opcodeToString: unknown opcode: " << (int)opcode;
+        DIE << "opcodeToString: unknown opcode: " << std::hex << (int)opcode;
     }
     return "Unknown";
 }

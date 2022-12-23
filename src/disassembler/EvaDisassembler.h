@@ -35,6 +35,8 @@ public:
             offset = disassembleInstruction(co, offset);
             std::cout << std::endl;
         }
+
+        std::cout << "--------- Disassembly complete ---------" << std::endl;
     }
 
 private:
@@ -65,6 +67,8 @@ private:
         case OP_DIV:
         case OP_POP:
             return disassembleSimple(co, opcode, offset);
+        case OP_SCOPE_EXIT:
+            return disassembleWord(co, opcode, offset);
         case OP_CONST:
             return disassembleConst(co, opcode, offset);
         case OP_COMPARE:
@@ -75,9 +79,13 @@ private:
         case OP_GET_GLOBAL:
         case OP_SET_GLOBAL:
             return disassembleGlobal(co, opcode, offset);
+        case OP_GET_LOCAL:
+        case OP_SET_LOCAL:
+            return disassembleLocal(co, opcode, offset);
         default:
             DIE << "disassembleInstruction: no disassembly for "
-                << opcodeToString(opcode) << std::endl;
+                << opcodeToString(opcode)
+                << std::endl;
         }
 
         std::cout.flags(f);
@@ -93,6 +101,17 @@ private:
         dumpBytes(co, offset, 1);
         printOpCode(opcode);
         return offset + 1;
+    }
+
+    /**
+     * Disassembles a const instruction
+     */
+    size_t disassembleWord(CodeObject *co, uint8_t opcode, size_t offset)
+    {
+        dumpBytes(co, offset, 2);
+        printOpCode(opcode);
+        std::cout << (int)co->code[offset + 1];
+        return offset + 2;
     }
 
     /**
@@ -120,6 +139,19 @@ private:
                   << ")";
         return offset + 2;
     }
+
+    /**
+     * Disassemble instructions to handle local vals
+     */
+    size_t disassembleLocal(CodeObject *co, uint8_t opcode, size_t offset)
+    {
+        dumpBytes(co, offset, 2);
+        printOpCode(opcode);
+        auto localIndex = co->code[offset + 1];
+        std::cout << (int)localIndex << " (" << co->locals[localIndex].name << ")";
+        return offset + 2;
+    }
+
     /**
      * Disassembles the compare instruction
      */

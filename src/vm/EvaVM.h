@@ -130,6 +130,22 @@ public:
     }
 
     /**
+     * Pops N values from the stack
+     */
+    void popN(size_t count)
+    {
+        if (stack.size() == 0)
+        {
+            DIE << "popN(): empty stack." << std::endl;
+        }
+        if (count > stack.size())
+        {
+            DIE << "popN(): count greater than stack size." << std::endl;
+        }
+        sp -= count;
+    }
+
+    /**
      * Get value from stack without popping
      */
     EvaValue peek(const size_t offset = 0)
@@ -146,19 +162,24 @@ public:
      */
     EvaValue exec(const std::string &program)
     {
+        printf("Starting VM execution. Parsing.\n");
         // 1. Parse the program
         auto ast = parser->parse("(begin " + program + ")");
 
+        printf("Compiling.\n");
         // 2. Compile program to Eva bytecode
         co = compiler->compile(ast);
 
         // Set instruction pointer to the beginning, sp to top of stack
         ip = &co->code[0];
-        sp = stack.begin();
+        sp = &stack[0];
+        bp = sp;
 
+        printf("Disassembling.\n");
         // Emit the disassembly
         compiler->disassembleBytecode();
 
+        printf("Evaluating.\n");
         return eval();
     }
 
@@ -271,6 +292,40 @@ public:
             case OP_POP:
                 pop();
                 break;
+            case OP_GET_LOCAL:
+            {
+                auto localIndex = READ_BYTE();
+                if (localIndex < 0 || localIndex >= stack.size())
+                {
+                    DIE << "OP_GET_LOCAL: invalid variable index: " << (int)localIndex;
+                }
+                push(bp[localIndex]);
+                break;
+            }
+            case OP_SET_LOCAL:
+            {
+                auto localIndex = READ_BYTE();
+                auto value = peek(0);
+                if (localIndex < 0 || localIndex >= stack.size())
+                {
+                    DIE << "OP_SET_LOCAL: invalid variable index: " << (int)localIndex;
+                }
+                bp[localIndex] = value;
+                break;
+            }
+            case OP_SCOPE_EXIT:
+            {
+                auto count = READ_BYTE();
+
+                // Simple operation: value on top of stack is the result of the
+                // block. We need to put it back after popping all local vars
+                // We could pop it and save, pop all local vars, then push it
+                // back. OR, we could do this hacky shit to move it directly.
+                *(sp - 1 - count) = peek(0);
+
+                popN(count);
+                break;
+            }
             default:
                 printf("Better logging? opcode at fault: %d 0x%.2X\n", opcode, opcode);
                 DIE << "Unknown opcode: " << std::hex << opcode << std::dec << opcode;
@@ -311,6 +366,11 @@ public:
      * Stack pointer
      */
     EvaValue *sp;
+
+    /**
+     * Base (stack frame) pointer
+     */
+    EvaValue *bp;
 
     /**
      * Operands stack.
