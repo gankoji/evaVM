@@ -45,3 +45,17 @@ TEST(Variables, SetExistingNewValue)
     log(result);
     EXPECT_EQ(result.number, 20);
 }
+
+TEST(Variables, SetNewNewValue)
+{
+    EvaVM vm;
+
+    auto result = vm.exec(R"(
+        (var z 10)
+        (var a 30)
+        (set z (+ a 10))
+        z
+    )");
+    log(result);
+    EXPECT_EQ(result.number, 40);
+}
