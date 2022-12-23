@@ -14,7 +14,7 @@ struct GlobalVar
 {
     std::string name;
     EvaValue value;
-}
+};
 
 struct Global
 {
@@ -70,6 +70,17 @@ struct Global
         globals.push_back({name, NUMBER(0)});
     }
 
+    /**
+     * Adds a global constant
+     */
+    void addConst(const std::string &name, double value)
+    {
+        if (exists(name))
+        {
+            return;
+        }
+        globals.push_back({name, NUMBER(value)});
+    }
     /**
      * Check whether a global var exists
      */

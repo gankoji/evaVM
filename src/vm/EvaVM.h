@@ -13,6 +13,7 @@
 #include "src/bytecode/OpCode.h"
 #include "src/vm/Logger.h"
 #include "src/vm/EvaValue.h"
+#include "src/vm/Global.h"
 #include "src/parser/EvaParser.h"
 #include "src/compiler/EvaCompiler.h"
 
@@ -95,8 +96,12 @@ class EvaVM
 {
 public:
     EvaVM()
-        : parser(std::make_unique<syntax::EvaParser>()),
-          compiler(std::make_unique<EvaCompiler>()) {}
+        : global(std::make_shared<Global>()),
+          parser(std::make_unique<syntax::EvaParser>()),
+          compiler(std::make_unique<EvaCompiler>(global))
+    {
+        setGlobalVariables();
+    }
 
     /**
      * Pushes a value onto the stack
@@ -122,6 +127,18 @@ public:
         }
         --sp;
         return *sp;
+    }
+
+    /**
+     * Get value from stack without popping
+     */
+    EvaValue peek(const size_t offset = 0)
+    {
+        if (stack.size() == 0)
+        {
+            DIE << "peek(): empty stack." << std::endl;
+        }
+        return *(sp - 1 - offset);
     }
 
     /**
@@ -238,12 +255,39 @@ public:
                 ip = TO_ADDRESS(READ_SHORT());
                 break;
             }
+            case OP_GET_GLOBAL:
+            {
+                auto globalIndex = READ_BYTE();
+                push(global->get(globalIndex).value);
+                break;
+            }
+            case OP_SET_GLOBAL:
+            {
+                auto globalIndex = READ_BYTE();
+                auto value = peek(0);
+                global->set(globalIndex, value);
+                break;
+            }
             default:
                 printf("Better logging? opcode at fault: %d 0x%.2X\n", opcode, opcode);
                 DIE << "Unknown opcode: " << std::hex << opcode << std::dec << opcode;
             }
         }
     }
+
+    /**
+     * Sets up global variables and functions
+     */
+    void setGlobalVariables()
+    {
+        global->addConst("x", 10);
+        global->addConst("y", 20);
+    }
+
+    /**
+     * Global vars object
+     */
+    std::shared_ptr<Global> global;
 
     /**
      * Parser

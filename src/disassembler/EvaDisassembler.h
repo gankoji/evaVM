@@ -11,11 +11,14 @@
 
 #include "src/bytecode/OpCode.h"
 #include "src/vm/EvaValue.h"
+#include "src/vm/Global.h"
 #include "src/vm/Logger.h"
 
 class EvaDisassembler
 {
 public:
+    EvaDisassembler(std::shared_ptr<Global> global) : global(global) {}
+
     /**
      * Disassembles a code unit
      */
@@ -35,6 +38,11 @@ public:
     }
 
 private:
+    /**
+     * Global var object
+     */
+    std::shared_ptr<Global> global;
+
     /**
      * Disassembles a single instruction/bytecode.
      */
@@ -63,6 +71,9 @@ private:
         case OP_JMP_IF_FALSE:
         case OP_JMP:
             return disassembleJump(co, opcode, offset);
+        case OP_GET_GLOBAL:
+        case OP_SET_GLOBAL:
+            return disassembleGlobal(co, opcode, offset);
         default:
             DIE << "disassembleInstruction: no disassembly for "
                 << opcodeToString(opcode) << std::endl;
@@ -96,6 +107,18 @@ private:
         return offset + 2;
     }
 
+    /**
+     * Disassemble instructions to handle global vals
+     */
+    size_t disassembleGlobal(CodeObject *co, uint8_t opcode, size_t offset)
+    {
+        dumpBytes(co, offset, 2);
+        printOpCode(opcode);
+        auto globalIndex = co->code[offset + 1];
+        std::cout << (int)globalIndex << " (" << global->get(globalIndex).name
+                  << ")";
+        return offset + 2;
+    }
     /**
      * Disassembles the compare instruction
      */

@@ -3,6 +3,7 @@
 #include "eva_symbols.h"
 #include "comparison_ops.h"
 #include "branching.h"
+#include "variables.h"
 
 TEST(EvaBasic, SanityCheck)
 {

@@ -13,6 +13,7 @@
 #include "src/parser/EvaParser.h"
 #include "src/vm/EvaValue.h"
 #include "src/vm/Logger.h"
+#include "src/vm/Global.h"
 
 // Allocates new constant in the constant pool
 #define ALLOC_CONST(tester, converter, allocator, value) \
@@ -46,7 +47,7 @@
 class EvaCompiler
 {
 public:
-    EvaCompiler() : disassembler(std::make_unique<EvaDisassembler>()) {}
+    EvaCompiler(std::shared_ptr<Global> global) : disassembler(std::make_unique<EvaDisassembler>(global)), global(global) {}
 
     /**
      * Main compile API
@@ -87,7 +88,15 @@ public:
             }
             else
             {
-                // It's a variable. TODO
+                // Variables
+                // 1. Global vars
+                if (!global->exists(exp.string))
+                {
+                    DIE << "[EvaCompiler]: Reference error: " << exp.string;
+                }
+
+                emit(OP_GET_GLOBAL);
+                emit(global->getGlobalIndex(exp.string));
             }
             break;
         case ExpType::LIST:
@@ -160,6 +169,40 @@ public:
                     auto endBranchAddr = getOffset();
                     patchJumpAddress(endAddr, endBranchAddr);
                 }
+
+                // Variable declaration: (var x (+ y 10))
+                else if (op == "var")
+                {
+                    // 1. Global vars
+                    global->define(exp.list[1].string);
+
+                    // Initializer
+                    gen(exp.list[2]);
+                    emit(OP_SET_GLOBAL);
+                    emit(global->getGlobalIndex(exp.list[1].string));
+
+                    // 2. Local vars
+                }
+
+                // Set variables: (set x 100)
+                else if (op == "set")
+                {
+                    // 1. Global vars
+                    auto varName = exp.list[1].string;
+
+                    // Set Value on top of stack
+                    gen(exp.list[2]);
+
+                    if (!global->exists(varName))
+                    {
+                        DIE << "Reference error: " << varName << " is not defined." << std::endl;
+                    }
+                    auto globalIndex = global->getGlobalIndex(varName);
+                    emit(OP_SET_GLOBAL);
+                    emit(globalIndex);
+
+                    // 2. Local vars (TODO)
+                }
             }
             break; // TODO
         }
@@ -228,6 +271,11 @@ private:
         writeByteAtOffset(offset, (value >> 8) & 0xFF);
         writeByteAtOffset(offset + 1, value & 0xFF);
     }
+
+    /**
+     * Global vars object
+     */
+    std::shared_ptr<Global> global;
 
     /**
      * Compiled code object
