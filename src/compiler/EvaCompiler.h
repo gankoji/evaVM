@@ -203,6 +203,19 @@ public:
 
                     // 2. Local vars (TODO)
                 }
+                else if (op == "begin")
+                {
+                    for (auto i = 1; i < exp.list.size(); i++)
+                    {
+                        bool isLast = i == exp.list.size() - 1;
+                        gen(exp.list[i]);
+
+                        if (!isLast)
+                        {
+                            emit(OP_POP);
+                        }
+                    }
+                }
             }
             break; // TODO
         }

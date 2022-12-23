@@ -11,7 +11,9 @@ int main(int argc, char const *argv[])
     EvaVM vm;
 
     auto result = vm.exec(R"(
-        (set x 20) 
+        (var z 5)
+        (set z (+ x 10))
+        z
     )");
 
     log(result);

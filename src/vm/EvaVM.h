@@ -147,7 +147,7 @@ public:
     EvaValue exec(const std::string &program)
     {
         // 1. Parse the program
-        auto ast = parser->parse(program);
+        auto ast = parser->parse("(begin " + program + ")");
 
         // 2. Compile program to Eva bytecode
         co = compiler->compile(ast);
@@ -268,6 +268,9 @@ public:
                 global->set(globalIndex, value);
                 break;
             }
+            case OP_POP:
+                pop();
+                break;
             default:
                 printf("Better logging? opcode at fault: %d 0x%.2X\n", opcode, opcode);
                 DIE << "Unknown opcode: " << std::hex << opcode << std::dec << opcode;

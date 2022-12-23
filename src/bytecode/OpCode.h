@@ -42,6 +42,11 @@
 #define OP_GET_GLOBAL 0x09
 #define OP_SET_GLOBAL 0x0A
 
+/**
+ * Local vars
+ */
+#define OP_POP 0x0B
+
 // --------------------
 #define OP_STR(op) \
     case OP_##op:  \
@@ -62,6 +67,7 @@ std::string opcodeToString(uint8_t opcode)
         OP_STR(JMP);
         OP_STR(GET_GLOBAL);
         OP_STR(SET_GLOBAL);
+        OP_STR(POP);
     default:
         DIE << "opcodeToString: unknown opcode: " << (int)opcode;
     }
