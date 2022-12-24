@@ -241,8 +241,6 @@ public:
                 {
                     scopeEnter();
 
-                    std::cout << "The problem appears to be with blocks. As usual. \n";
-                    std::cout << "Begin: ";
                     for (auto i = 1; i < exp.list.size(); i++)
                     {
                         if (exp.list[i].type == ExpType::STRING)
@@ -262,12 +260,10 @@ public:
 
                         if (!isLast && !isLocalDeclaration)
                         {
-                            std::cout << "Emitting pop. \n";
                             emit(OP_POP);
                         }
                     }
 
-                    std::cout << "Exiting scope.\n";
                     scopeExit();
                 }
             }
