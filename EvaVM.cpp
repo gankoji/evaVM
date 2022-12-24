@@ -16,7 +16,7 @@ int main(int argc, char const *argv[])
         (var z 10)
         (set z 100)
         (begin
-            (var z 200)
+            (var a 200)
         )
         z
     )");

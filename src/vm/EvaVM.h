@@ -121,12 +121,17 @@ public:
      */
     EvaValue pop()
     {
-        if (sp == stack.begin())
+        if (sp == stack.begin() || stack.size() == 0)
         {
             DIE << "pop(): empty stack.\n";
         }
+        if ((size_t)(sp - stack.begin()) > STACK_LIMIT)
+        {
+            DIE << "pop(): Stack pointer corrupted.\n";
+        }
         --sp;
-        return *sp;
+        auto result = *sp;
+        return result;
     }
 
     /**
@@ -180,7 +185,9 @@ public:
         compiler->disassembleBytecode();
 
         printf("Evaluating.\n");
-        return eval();
+        auto result = eval();
+        printf("Got a result from eval, now returning from exec.\n");
+        return result;
     }
 
     /**
@@ -191,10 +198,14 @@ public:
         for (;;)
         {
             auto opcode = READ_BYTE();
+            opcode_pretty(opcode);
             switch (opcode)
             {
             case OP_HALT:
-                return pop();
+            {
+                auto result = pop();
+                return result;
+            }
             case OP_CONST:
             {
                 EvaValue constant = GET_CONST();
@@ -290,8 +301,10 @@ public:
                 break;
             }
             case OP_POP:
+            {
                 pop();
                 break;
+            }
             case OP_GET_LOCAL:
             {
                 auto localIndex = READ_BYTE();
@@ -319,11 +332,12 @@ public:
 
                 // Simple operation: value on top of stack is the result of the
                 // block. We need to put it back after popping all local vars
-                // We could pop it and save, pop all local vars, then push it
-                // back. OR, we could do this hacky shit to move it directly.
-                *(sp - 1 - count) = peek(0);
-
-                popN(count);
+                auto result = pop();
+                popN(count - 1); // BUG: our result *might be one of the local vars*
+                                 // Ideal fix is to tell when that case happens,
+                                 // and adjust our count accordingly. Until
+                                 // then, this stops the segfaults.
+                push(result);
                 break;
             }
             default:

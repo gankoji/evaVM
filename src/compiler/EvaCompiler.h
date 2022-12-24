@@ -241,8 +241,14 @@ public:
                 {
                     scopeEnter();
 
+                    std::cout << "The problem appears to be with blocks. As usual. \n";
+                    std::cout << "Begin: ";
                     for (auto i = 1; i < exp.list.size(); i++)
                     {
+                        if (exp.list[i].type == ExpType::STRING)
+                        {
+                            std::cout << exp.list[i].string;
+                        }
                         // The value of the last expression is the only value
                         // that should be kept on the stack.
                         bool isLast = i == exp.list.size() - 1;
@@ -256,10 +262,12 @@ public:
 
                         if (!isLast && !isLocalDeclaration)
                         {
+                            std::cout << "Emitting pop. \n";
                             emit(OP_POP);
                         }
                     }
 
+                    std::cout << "Exiting scope.\n";
                     scopeExit();
                 }
             }
@@ -272,9 +280,7 @@ public:
      */
     void disassembleBytecode()
     {
-        std::cout << "Disassembling from the compiler." << std::endl;
         disassembler->disassemble(co);
-        std::cout << "Compiler disassembly complete." << std::endl;
     }
 
 private:
