@@ -183,6 +183,89 @@ public:
                     patchJumpAddress(endAddr, endBranchAddr);
                 }
 
+                // While loop:
+                // (while <test> <body>)
+                else if (op == "while")
+                {
+                    auto loopStartAddr = getOffset();
+
+                    // Emit <test>
+                    gen(exp.list[1]);
+
+                    // Jump to loop end. init with 0 address, will be patched.
+                    emit(OP_JMP_IF_FALSE);
+
+                    // Loop start: 2-byte dummy address
+                    emit(0);
+                    emit(0);
+
+                    // The point in the bytecode where we'll patch the jump
+                    // address for loop end
+                    auto loopEndJmpAddr = getOffset() - 2;
+
+                    // Emit <body>
+                    gen(exp.list[2]);
+
+                    // Jump to start of loop
+                    emit(OP_JMP);
+
+                    // Loop end: dummy address
+                    emit(0);
+                    emit(0);
+
+                    // Finally, patch the addresses. Start address:
+                    patchJumpAddress(getOffset() - 2, loopStartAddr);
+
+                    // and end address
+                    auto loopEndAddr = getOffset() + 1;
+                    patchJumpAddress(loopEndJmpAddr, loopEndAddr);
+                }
+
+                // For loop:
+                // (for <vardec> <test> <varchange> <body>)
+                else if (op == "for")
+                {
+                    // Declare variable
+                    gen(exp.list[1]);
+
+                    // Loop start
+                    auto loopStartAddr = getOffset();
+
+                    // Emit <test>
+                    gen(exp.list[2]);
+
+                    // Jump to loop end. init with 0 address, will be patched.
+                    emit(OP_JMP_IF_FALSE);
+
+                    // Loop start: 2-byte dummy address
+                    emit(0);
+                    emit(0);
+
+                    // The point in the bytecode where we'll patch the jump
+                    // address for loop end
+                    auto loopEndJmpAddr = getOffset() - 2;
+
+                    // Emit <varchange>
+                    gen(exp.list[3]);
+
+                    // Emit <body>
+                    gen(exp.list[4]);
+
+                    // Jump to start of loop
+                    emit(OP_JMP);
+
+                    // Loop end: dummy address
+                    emit(0);
+                    emit(0);
+
+                    // Finally, patch the addresses. Start address:
+                    patchJumpAddress(getOffset() - 2, loopStartAddr);
+
+                    // and end address
+                    auto loopEndAddr = getOffset() + 1;
+                    patchJumpAddress(loopEndJmpAddr, loopEndAddr);
+                }
+
                 // Variable declaration: (var x (+ y 10))
                 else if (op == "var")
                 {

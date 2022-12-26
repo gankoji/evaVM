@@ -44,3 +44,17 @@ TEST(LocalVariables, FurtherNestedScope)
     )");
     EXPECT_EQ(result.number, 15);
 }
+TEST(LocalVariables, FormerSegFaultLvarPop)
+{
+    EvaVM vm;
+
+    auto result = vm.exec(R"(
+        (var z 10)
+        (set z 100)
+        (begin
+            (var a 200)
+        )
+        z
+    )");
+    EXPECT_EQ(result.number, 100);
+}

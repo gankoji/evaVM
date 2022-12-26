@@ -13,15 +13,13 @@ int main(int argc, char const *argv[])
     EvaVM vm;
 
     auto result = vm.exec(R"(
-        (var z 10)
-        (set z 100)
-        (begin
-            (var a 200)
-        )
-        z
+        (var count 0)
+        (for (var i 0) (< i 10) (set i (+ i 1))
+            (begin
+                (set count (+  count 1))))
+        count
     )");
 
-    printf("Yeah we done.\n");
     log(result);
 
     return 0;

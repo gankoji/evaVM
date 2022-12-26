@@ -198,7 +198,7 @@ public:
         for (;;)
         {
             auto opcode = READ_BYTE();
-            opcode_pretty(opcode);
+            // opcode_pretty(opcode);
             switch (opcode)
             {
             case OP_HALT:

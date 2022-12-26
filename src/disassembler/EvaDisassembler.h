@@ -104,7 +104,7 @@ private:
     }
 
     /**
-     * Disassembles a const instruction
+     * Disassembles a two-byte word
      */
     size_t disassembleWord(CodeObject *co, uint8_t opcode, size_t offset)
     {
