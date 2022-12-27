@@ -44,6 +44,7 @@ TEST(LocalVariables, FurtherNestedScope)
     )");
     EXPECT_EQ(result.number, 15);
 }
+
 TEST(LocalVariables, FormerSegFaultLvarPop)
 {
     EvaVM vm;
