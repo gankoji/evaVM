@@ -198,7 +198,6 @@ public:
         for (;;)
         {
             auto opcode = READ_BYTE();
-            // opcode_pretty(opcode);
             switch (opcode)
             {
             case OP_HALT:
@@ -437,6 +436,27 @@ public:
      * Code object
      */
     CodeObject *co;
+
+    //--------------------------------------
+    // Debug functions
+
+    /**
+     * Dumps the current stack
+     */
+    void dumpStack()
+    {
+        std::cout << "\n------- Stack --------\n";
+        if (sp == stack.begin())
+        {
+            std::cout << "(empty)";
+        }
+        auto csp = sp - 1;
+        while (csp >= stack.begin())
+        {
+            std::cout << *csp-- << std::endl;
+        }
+        std::cout << std::endl;
+    }
 };
 
 #endif
