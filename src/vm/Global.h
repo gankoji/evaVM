@@ -71,6 +71,18 @@ struct Global
     }
 
     /**
+     * Adds a native function
+     */
+    void addNativeFunction(const std::string &name, std::function<void()> fn, size_t arity)
+    {
+        if (exists(name))
+        {
+            return;
+        }
+
+        globals.push_back({name, ALLOC_NATIVE(fn, name, arity)});
+    }
+    /**
      * Adds a global constant
      */
     void addConst(const std::string &name, double value)
@@ -81,6 +93,7 @@ struct Global
         }
         globals.push_back({name, NUMBER(value)});
     }
+
     /**
      * Check whether a global var exists
      */

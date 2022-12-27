@@ -340,6 +340,28 @@ public:
                 push(result);
                 break;
             }
+            case OP_CALL:
+            {
+                auto argsCount = READ_BYTE();
+                auto fnValue = peek(argsCount);
+
+                // Native function
+                if (IS_NATIVE(fnValue))
+                {
+                    AS_NATIVE(fnValue)->function();
+                    auto result = pop();
+
+                    // Pop args and function:
+                    popN(argsCount + 1);
+
+                    // Put result back on top of the stack
+                    push(result);
+
+                    break;
+                }
+
+                // User defined function
+            }
             default:
                 printf("Better logging? opcode at fault: %d 0x%.2X\n", opcode, opcode);
                 DIE << "Unknown opcode: " << std::hex << opcode << std::dec << opcode;
@@ -352,6 +374,15 @@ public:
      */
     void setGlobalVariables()
     {
+        // Native square function
+        global->addNativeFunction(
+            "square",
+            [&]()
+            {
+                auto x = AS_NUMBER(peek(0));
+                push(NUMBER(x * x));
+            },
+            1);
         global->addConst("x", 10);
         global->addConst("y", 20);
     }

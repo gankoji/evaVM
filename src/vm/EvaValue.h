@@ -5,6 +5,7 @@
 #ifndef EvaValue_h
 #define EvaValue_h
 
+#include <functional>
 #include "src/vm/Logger.h"
 
 /**
@@ -24,6 +25,7 @@ enum class ObjectType
 {
     STRING,
     CODE,
+    NATIVE,
 };
 
 /**
@@ -42,6 +44,23 @@ struct StringObject : public Object
 {
     StringObject(const std::string &str) : Object(ObjectType::STRING), string(str) {}
     std::string string;
+};
+
+/**
+ * Native functions
+ */
+using NativeFn = std::function<void()>;
+
+struct NativeObject : public Object
+{
+    NativeObject(NativeFn function, const std::string &name, size_t arity) : Object(ObjectType::NATIVE),
+                                                                             function(function),
+                                                                             name(name),
+                                                                             arity(arity) {}
+
+    NativeFn function;
+    std::string name;
+    size_t arity;
 };
 
 /**
@@ -107,6 +126,9 @@ struct CodeObject : public Object
     ((EvaValue){.type = EvaValueType::OBJECT, .object = (Object *)new StringObject(value)})
 #define ALLOC_CODE(name) \
     ((EvaValue){.type = EvaValueType::OBJECT, .object = (Object *)new CodeObject(name)})
+#define ALLOC_NATIVE(fn, name, arity)         \
+    ((EvaValue){.type = EvaValueType::OBJECT, \
+                .object = (Object *)new NativeObject(fn, name, arity)})
 
 /**
  * Accessors
@@ -117,6 +139,7 @@ struct CodeObject : public Object
 #define AS_STRING(evaValue) ((StringObject *)(evaValue).object)
 #define AS_CPPSTRING(evaValue) (AS_STRING(evaValue)->string)
 #define AS_CODE(evaValue) ((CodeObject *)(evaValue).object)
+#define AS_NATIVE(evaValue) ((NativeObject *)(evaValue).object)
 
 /**
  * Predicates
@@ -128,6 +151,7 @@ struct CodeObject : public Object
     (IS_OBJECT(evaValue) && AS_OBJECT(evaValue)->type == objectType)
 #define IS_STRING(evaValue) IS_OBJECT_TYPE(evaValue, ObjectType::STRING)
 #define IS_CODE(evaValue) IS_OBJECT_TYPE(evaValue, ObjectType::CODE)
+#define IS_NATIVE(evaValue) IS_OBJECT_TYPE(evaValue, ObjectType::NATIVE)
 
 /**
  * Output stream
@@ -149,6 +173,10 @@ std::string evaValueToTypeString(const EvaValue &evaValue)
     else if (IS_CODE(evaValue))
     {
         return "CODE";
+    }
+    else if (IS_NATIVE(evaValue))
+    {
+        return "NATIVE";
     }
     else
     {
@@ -177,9 +205,14 @@ std::string evaValueToConstantString(const EvaValue &evaValue)
         auto code = AS_CODE(evaValue);
         ss << "code: " << code << ": " << code->name;
     }
+    else if (IS_NATIVE(evaValue))
+    {
+        auto fn = AS_NATIVE(evaValue);
+        ss << fn->name << "/" << fn->arity;
+    }
     else
     {
-        DIE << "evaValueToTypeString: unknown type " << (int)evaValue.type;
+        DIE << "evaValueToConstantString: unknown type " << (int)evaValue.type;
     }
     return ss.str();
 }

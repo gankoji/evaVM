@@ -349,6 +349,22 @@ public:
 
                     scopeExit();
                 }
+
+                else
+                {
+                    // Function calls
+                    // Push function onto the stack:
+                    gen(exp.list[0]);
+
+                    // Arguments:
+                    for (auto i = 1; i < exp.list.size(); i++)
+                    {
+                        gen(exp.list[i]);
+                    }
+
+                    emit(OP_CALL);
+                    emit(exp.list.size() - 1);
+                }
             }
             break; // TODO
         }

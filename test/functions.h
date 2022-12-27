@@ -9,5 +9,5 @@ TEST(Functions, NativeFunctions)
         (square 2)
     )");
     log(result);
-    EXPECT_EQ(result.number, 2);
+    EXPECT_EQ(result.number, 4);
 }
