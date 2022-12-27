@@ -55,7 +55,7 @@ public:
     CodeObject *compile(const Exp &exp)
     {
         // Allocate new code object
-        co = AS_CODE(ALLOC_CODE("main"));
+        co = AS_CODE(createCodeObjectValue("main"));
 
         // Recursively generate from top-level
         gen(exp);
@@ -143,7 +143,6 @@ public:
                     emit(OP_COMPARE);
                     emit(compareOps_[op]);
                 }
-
                 // Branch instruction
                 // (if <test> <consequent> <alternate>)
                 else if (op == "if")
@@ -182,7 +181,6 @@ public:
                     auto endBranchAddr = getOffset();
                     patchJumpAddress(endAddr, endBranchAddr);
                 }
-
                 // While loop:
                 // (while <test> <body>)
                 else if (op == "while")
@@ -220,7 +218,6 @@ public:
                     auto loopEndAddr = getOffset() + 1;
                     patchJumpAddress(loopEndJmpAddr, loopEndAddr);
                 }
-
                 // For loop:
                 // (for <vardec> <test> <varchange> <body>)
                 else if (op == "for")
@@ -265,15 +262,12 @@ public:
                     auto loopEndAddr = getOffset() + 1;
                     patchJumpAddress(loopEndJmpAddr, loopEndAddr);
                 }
-
                 // Variable declaration: (var x (+ y 10))
                 else if (op == "var")
                 {
                     auto varName = exp.list[1].string;
-
                     // Initializer
                     gen(exp.list[2]);
-
                     // 1. Global vars
                     if (isGlobalScope())
                     {
@@ -289,7 +283,6 @@ public:
                         emit(co->getLocalIndex(varName));
                     }
                 }
-
                 // Set variables: (set x 100)
                 else if (op == "set")
                 {
@@ -320,6 +313,7 @@ public:
                         emit(globalIndex);
                     }
                 }
+                // Blocks/environments/scopes/closures (begin <body>)
                 else if (op == "begin")
                 {
                     scopeEnter();
@@ -349,7 +343,62 @@ public:
 
                     scopeExit();
                 }
+                // User defined functions
+                else if (op == "def")
+                {
+                    // User defined functions
+                    // (def <name> <params> <body>)
+                    auto fnName = exp.list[1].string;
+                    auto params = exp.list[2].list;
+                    auto arity = params.size();
+                    auto body = exp.list[3];
 
+                    // Save previous code object:
+                    auto prevCo = co;
+
+                    // Function code object:
+                    auto coValue = createCodeObjectValue(fnName, arity);
+                    co = AS_CODE(coValue);
+
+                    // Store new co as a constant
+                    prevCo->constants.push_back(coValue);
+
+                    // Function name is registered as a local constant,
+                    // so the function can call itself recursively
+                    co->addLocal(fnName);
+
+                    // parameters are added as variables
+                    for (auto i = 0; i < arity; i++)
+                    {
+                        auto argName = params[i].string;
+                        co->addLocal(argName);
+                    }
+
+                    // Compile body in the new code object
+                    gen(body);
+
+                    if (!isBlock(body))
+                    {
+                        emit(OP_SCOPE_EXIT);
+                        emit(arity + 1);
+                    }
+
+                    // Explicit return to restore caller address
+                    emit(OP_RETURN);
+
+                    // Create the function:
+                    auto fn = ALLOC_FUNCTION(co);
+
+                    // Restore the previous code object
+                    co = prevCo;
+
+                    // Add function as a constant to our co
+                    co->constants.push_back(fn);
+
+                    // And emit code for this new constant:
+                    emit(OP_CONST);
+                    emit(co->constants.size() - 1);
+                }
                 else
                 {
                     // Function calls
@@ -375,7 +424,10 @@ public:
      */
     void disassembleBytecode()
     {
-        disassembler->disassemble(co);
+        for (auto &co : codeObjects_)
+        {
+            disassembler->disassemble(co);
+        }
     }
 
 private:
@@ -383,6 +435,26 @@ private:
      * Disassembler
      */
     std::unique_ptr<EvaDisassembler> disassembler;
+
+    /**
+     * Global vars object
+     */
+    std::shared_ptr<Global> global;
+
+    /**
+     * Compiled code object
+     */
+    CodeObject *co;
+
+    /**
+     * All code objects
+     */
+    std::vector<CodeObject *> codeObjects_;
+
+    /**
+     * Comparison operators map
+     */
+    static std::map<std::string, uint8_t> compareOps_;
 
     /**
      * Emits bytecode
@@ -435,6 +507,17 @@ private:
     }
 
     /**
+     * Creates a new code object.
+     */
+    EvaValue createCodeObjectValue(const std::string &name, size_t arity = 0)
+    {
+        auto coValue = ALLOC_CODE(name, arity);
+        auto co = AS_CODE(coValue);
+        codeObjects_.push_back(code);
+        return coValue;
+    }
+
+    /**
      * Enter a new scope. Increase the scope level
      */
     void scopeEnter() { co->scopeLevel++; }
@@ -473,6 +556,14 @@ private:
     bool isVarDeclaration(const Exp &exp) { return isTaggedList(exp, "var"); }
 
     /**
+     * Blocks
+     */
+    bool isBlock(const Exp &exp)
+    {
+        return isTaggedList(exp, "begin");
+    }
+
+    /**
      * Tagged lists
      */
     bool isTaggedList(const Exp &exp, const std::string &tag)
@@ -499,21 +590,6 @@ private:
 
         return varsCount;
     }
-
-    /**
-     * Global vars object
-     */
-    std::shared_ptr<Global> global;
-
-    /**
-     * Compiled code object
-     */
-    CodeObject *co;
-
-    /**
-     * Comparison operators map
-     */
-    static std::map<std::string, uint8_t> compareOps_;
 
     /**
      * Returns current bytecode offset.

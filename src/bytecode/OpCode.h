@@ -54,6 +54,8 @@
  * Function calls
  */
 #define OP_CALL 0x0F
+#define OP_RETURN 0x10
+
 // --------------------
 #define OP_STR(op) \
     case OP_##op:  \
