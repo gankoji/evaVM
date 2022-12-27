@@ -13,11 +13,7 @@ int main(int argc, char const *argv[])
     EvaVM vm;
 
     auto result = vm.exec(R"(
-        (var count 0)
-        (for (var i 0) (< i 10) (set i (+ i 1))
-            (begin
-                (set count (+  count 1))))
-        count
+        (square 2) // 4
     )");
 
     log(result);
