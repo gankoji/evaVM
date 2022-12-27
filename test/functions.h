@@ -11,3 +11,26 @@ TEST(Functions, NativeFunctions)
     log(result);
     EXPECT_EQ(result.number, 4);
 }
+
+TEST(Functions, NativeSum)
+{
+    EvaVM vm;
+
+    auto result = vm.exec(R"(
+        (sum 1 2)
+    )");
+    log(result);
+    EXPECT_EQ(result.number, 3);
+}
+
+TEST(Functions, NativeSumWithVars)
+{
+    EvaVM vm;
+
+    auto result = vm.exec(R"(
+        (var x 3)
+        (sum 2 x)
+    )");
+    log(result);
+    EXPECT_EQ(result.number, 5);
+}

@@ -383,6 +383,17 @@ public:
                 push(NUMBER(x * x));
             },
             1);
+
+        // Native sum function
+        global->addNativeFunction(
+            "sum",
+            [&]()
+            {
+                auto v2 = AS_NUMBER(peek(0));
+                auto v1 = AS_NUMBER(peek(1));
+                push(NUMBER(v1 + v2));
+            },
+            2);
         global->addConst("x", 10);
         global->addConst("y", 20);
     }
