@@ -26,6 +26,7 @@ enum class ObjectType
     STRING,
     CODE,
     NATIVE,
+    FUNCTION,
 };
 
 /**
@@ -61,20 +62,6 @@ struct NativeObject : public Object
     NativeFn function;
     std::string name;
     size_t arity;
-};
-
-/**
- * Function object
- */
-struct FunctionObject : public Object
-{
-    FunctionObject(CodeObject *co) : Object(ObjectType::FUNCTION), co(co) {}
-
-    /**
-     * Reference to the code object:
-     * contains function code, locals, etc.
-     */
-    CodeObject *co;
 };
 
 /**
@@ -116,6 +103,11 @@ struct CodeObject : public Object
         locals.push_back({name, scopeLevel});
     }
 
+    void addConstant(const EvaValue &value)
+    {
+        constants.push_back(value);
+    }
+
     int getLocalIndex(const std::string &name)
     {
         if (locals.size() > 0)
@@ -133,19 +125,33 @@ struct CodeObject : public Object
 };
 
 /**
+ * Function object
+ */
+struct FunctionObject : public Object
+{
+    FunctionObject(CodeObject *co) : Object(ObjectType::FUNCTION), co(co) {}
+
+    /**
+     * Reference to the code object:
+     * contains function code, locals, etc.
+     */
+    CodeObject *co;
+};
+
+/**
  * Constructors
  */
 #define NUMBER(value) ((EvaValue){.type = EvaValueType::NUMBER, .number = value})
 #define BOOLEAN(value) ((EvaValue){.type = EvaValueType::BOOLEAN, .boolean = value})
 #define ALLOC_STRING(value) \
     ((EvaValue){.type = EvaValueType::OBJECT, .object = (Object *)new StringObject(value)})
-#define ALLOC_CODE(name) \
-    ((EvaValue){.type = EvaValueType::OBJECT, .object = (Object *)new CodeObject(name)})
+#define ALLOC_CODE(name, arity) \
+    ((EvaValue){.type = EvaValueType::OBJECT, .object = (Object *)new CodeObject(name, arity)})
 #define ALLOC_NATIVE(fn, name, arity)         \
     ((EvaValue){.type = EvaValueType::OBJECT, \
                 .object = (Object *)new NativeObject(fn, name, arity)})
-#define ALLOC_FUNCTION(co) \
-    ((EvaValue){.type = EvaValueType::OBJECT, \ 
+#define ALLOC_FUNCTION(co)                    \
+    ((EvaValue){.type = EvaValueType::OBJECT, \
                 .object = (Object *)new FunctionObject(co)})
 
 /**
@@ -171,7 +177,7 @@ struct CodeObject : public Object
 #define IS_STRING(evaValue) IS_OBJECT_TYPE(evaValue, ObjectType::STRING)
 #define IS_CODE(evaValue) IS_OBJECT_TYPE(evaValue, ObjectType::CODE)
 #define IS_NATIVE(evaValue) IS_OBJECT_TYPE(evaValue, ObjectType::NATIVE)
-#define IS_NATIVE(evaValue) IS_OBJECT_TYPE(evaValue, ObjectType::FUNCTION)
+#define IS_FUNCTION(evaValue) IS_OBJECT_TYPE(evaValue, ObjectType::FUNCTION)
 
 /**
  * Output stream

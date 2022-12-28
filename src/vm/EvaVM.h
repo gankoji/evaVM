@@ -375,7 +375,7 @@ public:
     {
         // Native square function
         global->addNativeFunction(
-            "native-square",
+            "square",
             [&]()
             {
                 auto x = AS_NUMBER(peek(0));

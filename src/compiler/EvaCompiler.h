@@ -30,7 +30,7 @@
                 return i;                                \
             }                                            \
         }                                                \
-        co->constants.push_back(allocator(value));       \
+        co->addConstant(allocator(value));               \
     } while (false)
 
 // Generate binary operator: (+ 1 2) OP_CONST, OP_CONST, OP_ADD
@@ -361,7 +361,7 @@ public:
                     co = AS_CODE(coValue);
 
                     // Store new co as a constant
-                    prevCo->constants.push_back(coValue);
+                    prevCo->addConstant(coValue);
 
                     // Function name is registered as a local constant,
                     // so the function can call itself recursively
@@ -393,11 +393,25 @@ public:
                     co = prevCo;
 
                     // Add function as a constant to our co
-                    co->constants.push_back(fn);
+                    co->addConstant(fn);
 
                     // And emit code for this new constant:
                     emit(OP_CONST);
                     emit(co->constants.size() - 1);
+
+                    // Install the function as a variable
+                    if (isGlobalScope())
+                    {
+                        global->define(fnName);
+                        emit(OP_SET_GLOBAL);
+                        emit(global->getGlobalIndex(fnName));
+                    }
+                    else
+                    {
+                        co->addLocal(fnName);
+                        emit(OP_SET_LOCAL);
+                        emit(co->getLocalIndex(fnName));
+                    }
                 }
                 else
                 {
@@ -513,7 +527,7 @@ private:
     {
         auto coValue = ALLOC_CODE(name, arity);
         auto co = AS_CODE(coValue);
-        codeObjects_.push_back(code);
+        codeObjects_.push_back(co);
         return coValue;
     }
 
@@ -531,9 +545,16 @@ private:
         // within this specific scope
         auto varsCount = getVarsCountOnScopeExit();
 
-        if (varsCount > 0)
+        if (varsCount > 0 || co->arity > 0)
         {
             emit(OP_SCOPE_EXIT);
+
+            // For functions, do caller cleanup: pop all arguments
+            // plus the function name from the stack
+            if (isFunctionBody())
+            {
+                varsCount += co->arity + 1;
+            }
             emit(varsCount);
         }
 
@@ -544,6 +565,11 @@ private:
      * Check whether we're at global scope
      */
     bool isGlobalScope() { return co->name == "main" && co->scopeLevel == 1; }
+
+    /**
+     * Check if we're in a function body
+     */
+    bool isFunctionBody() { return co->name != "main" && co->scopeLevel == 1; }
 
     /**
      * Check if expression is a declaration
