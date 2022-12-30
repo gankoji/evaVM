@@ -52,17 +52,17 @@ public:
     /**
      * Main compile API
      */
-    CodeObject *compile(const Exp &exp)
+    void compile(const Exp &exp)
     {
         // Allocate new code object
         co = AS_CODE(createCodeObjectValue("main"));
+        main = AS_FUNCTION(ALLOC_FUNCTION(co));
 
         // Recursively generate from top-level
         gen(exp);
 
         // Explicitly stop execution
         emit(OP_HALT);
-        return co;
     }
 
     void gen(const Exp &exp)
@@ -444,6 +444,9 @@ public:
         }
     }
 
+    // Get the compiled (main) function object
+    FunctionObject *getMainFunction() { return main; }
+
 private:
     /**
      * Disassembler
@@ -459,6 +462,11 @@ private:
      * Compiled code object
      */
     CodeObject *co;
+
+    /**
+     * Main entry point (function)
+     */
+    FunctionObject *main;
 
     /**
      * All code objects

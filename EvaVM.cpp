@@ -13,18 +13,15 @@ int main(int argc, char const *argv[])
     EvaVM vm;
 
     auto result = vm.exec(R"(
-        // (def mysquare (x) (* x x))
-        // (mysquare 2) // 4
-        (def sum (a b)
-            (begin
-                (var x 10)
-                (+ x (+ a b))))
+//        (def mysquare (x) (* x x))
+//        (mysquare 2) // 4
+//
+        (def factorial (x)
+            (if (== x 1)
+            1
+            (* x (factorial (- x 1)))))
 
-//        (def factorial (x)
-//            (if (== x 1)
-//            1
-//            (* x (factorial (- x 1)))))
-//        (factorial 5)
+        (factorial 5)
     )");
 
     log(result);

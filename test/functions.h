@@ -34,3 +34,32 @@ TEST(Functions, NativeSumWithVars)
     log(result);
     EXPECT_EQ(result.number, 5);
 }
+
+TEST(Functions, UserDefFunc1)
+{
+    EvaVM vm;
+
+    auto result = vm.exec(R"(
+        (def mysquare (x) (* x x))
+
+        (mysquare 2)
+    )");
+    log(result);
+    EXPECT_EQ(result.number, 4);
+}
+
+// TEST(Functions, UserDefFunc2)
+// {
+//     EvaVM vm;
+//
+//     auto result = vm.exec(R"(
+//         (def factorial (x)
+//             (if (== x 1)
+//                 1
+//                 (* x (factorial (- x 1)))))
+//
+//         (factorial 5)
+//     )");
+//     log(result);
+//     EXPECT_EQ(result.number, 120);
+// }

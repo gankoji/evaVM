@@ -33,13 +33,13 @@
 /**
  * Converts bytecode index to a pointer
  */
-#define TO_ADDRESS(index) &co->code[index]
+#define TO_ADDRESS(index) &fn->co->code[index]
 
 /**
  * Gets a constant at the index in pool
  * defined by the next bytecode
  */
-#define GET_CONST() co->constants[READ_BYTE()]
+#define GET_CONST() fn->co->constants[READ_BYTE()]
 
 /**
  * Binary operation
@@ -88,6 +88,16 @@
         }                                                              \
         push(BOOLEAN(res));                                            \
     } while (false)
+
+/**
+ * Stack frame for function calls.
+ */
+struct Frame
+{
+    uint8_t *ra;        // Return address
+    EvaValue *bp;       // Base pointer (stack frame)
+    FunctionObject *fn; // Currently running function/code object/block
+};
 
 /**
  * Eva Virtual Machine.
@@ -167,27 +177,22 @@ public:
      */
     EvaValue exec(const std::string &program)
     {
-        printf("Starting VM execution. Parsing.\n");
         // 1. Parse the program
         auto ast = parser->parse("(begin " + program + ")");
 
-        printf("Compiling.\n");
         // 2. Compile program to Eva bytecode
-        co = compiler->compile(ast);
+        compiler->compile(ast);
+        fn = compiler->getMainFunction();
 
         // Set instruction pointer to the beginning, sp to top of stack
-        ip = &co->code[0];
+        ip = &fn->co->code[0];
         sp = &stack[0];
         bp = sp;
 
-        printf("Disassembling.\n");
         // Emit the disassembly
         compiler->disassembleBytecode();
 
-        printf("Evaluating.\n");
-        auto result = eval();
-        printf("Got a result from eval, now returning from exec.\n");
-        return result;
+        return eval();
     }
 
     /**
@@ -341,6 +346,8 @@ public:
             }
             case OP_CALL:
             {
+                printf("Calling.\n");
+                dumpStack();
                 auto argsCount = READ_BYTE();
                 auto fnValue = peek(argsCount);
 
@@ -360,6 +367,30 @@ public:
                 }
 
                 // User defined function
+                auto callee = AS_FUNCTION(fnValue);
+                // Need to save state of machine to restore after call
+                callStack.push(Frame{ip, bp, fn});
+
+                // Now set the machine state to the new function
+                fn = callee;               // Access local values for the function
+                bp = sp - argsCount - 1;   // Base (frame) pointer for the call
+                ip = &callee->co->code[0]; // Jumps to the function code
+
+                break;
+            }
+            case OP_RETURN:
+            {
+                printf("Returning\n");
+                dumpStack();
+                // Get the machine state we're restoring
+                auto callerFrame = callStack.top();
+
+                ip = callerFrame.ra; // Jump back to the caller's code
+                bp = callerFrame.bp; // Restore the operand stack
+                fn = callerFrame.fn; // And restore local variables
+
+                callStack.pop();
+                break;
             }
             default:
                 printf("Better logging? opcode at fault: %d 0x%.2X\n", opcode, opcode);
@@ -433,9 +464,14 @@ public:
     std::array<EvaValue, STACK_LIMIT> stack;
 
     /**
+     * Call stack
+     */
+    std::stack<Frame> callStack;
+
+    /**
      * Code object
      */
-    CodeObject *co;
+    FunctionObject *fn;
 
     //--------------------------------------
     // Debug functions
