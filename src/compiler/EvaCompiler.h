@@ -354,12 +354,12 @@ public:
                         bool isLast = i == exp.list.size() - 1;
 
                         // Local variables are the exception to the above rule
-                        bool isLocalDeclaration = isDeclaration(exp.list[i]); //&&!isGlobalScope();
+                        bool isDecl = isDeclaration(exp.list[i]);
 
                         // Generate the code for this expression
                         gen(exp.list[i]);
 
-                        if (!isLast && !isLocalDeclaration)
+                        if (!isLast && !isDecl)
                         {
                             emit(OP_POP);
                         }

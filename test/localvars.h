@@ -59,3 +59,20 @@ TEST(LocalVariables, FormerSegFaultLvarPop)
     )");
     EXPECT_EQ(result.number, 100);
 }
+
+TEST(LocalVariables, FixingWithBCOptimizedCausesStackUnderflow)
+{
+    EvaVM vm;
+
+    auto result = vm.exec(R"(
+        (var x 1)
+        (var y (+ x 1))
+        
+        (begin
+            (var a 10)
+            (var b 20)
+            (set a 100)
+            (+ a b))
+    )");
+    EXPECT_EQ(result.number, 120);
+}
