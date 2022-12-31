@@ -8,20 +8,11 @@
  */
 int main(int argc, char const *argv[])
 {
-    std::cout << "Hi, this is Eva." << std::endl;
-
     EvaVM vm;
 
     auto result = vm.exec(R"(
-//        (def mysquare (x) (* x x))
-//        (mysquare 2) // 4
-//
-        (def factorial (x)
-            (if (== x 1)
-            1
-            (* x (factorial (- x 1)))))
-
-        (factorial 5)
+        (var newsquare (lambda (x) (* x x)))
+        (newsquare 2)
     )");
 
     log(result);

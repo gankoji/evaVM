@@ -41,6 +41,21 @@
         gen(exp.list[2]); \
         emit(op);         \
     } while (false)
+
+// Call a function
+// Push function onto the stack:
+#define FUNCTION_CALL(exp)                         \
+    do                                             \
+    {                                              \
+        gen(exp.list[0]);                          \
+        for (auto i = 1; i < exp.list.size(); i++) \
+        {                                          \
+            gen(exp.list[i]);                      \
+        }                                          \
+        emit(OP_CALL);                             \
+        emit(exp.list.size() - 1);                 \
+    } while (false)
+
 /**
  * Compiler class, emits bytecode, records constant pool, vars, etc.
  */
@@ -79,17 +94,15 @@ public:
             emit(stringConstIdx(exp.string));
             break;
         case ExpType::SYMBOL:
-            /**
-             * Boolean
-             */
+            // Booleans
             if (exp.string == "true" || exp.string == "false")
             {
                 emit(OP_CONST);
                 emit(booleanConstIdx(exp.string == "true" ? true : false));
             }
+            // Variables
             else
             {
-                // Variables
                 auto varName = exp.string;
                 auto localIndex = co->getLocalIndex(varName);
 
@@ -136,6 +149,7 @@ public:
                 {
                     GEN_BINARY_OP(OP_DIV);
                 }
+                // Logical comparison (< a b)
                 else if (compareOps_.count(op) != 0)
                 {
                     gen(exp.list[1]);
@@ -144,8 +158,7 @@ public:
                     emit(OP_COMPARE);
                     emit(compareOps_[op]);
                 }
-                // Branch instruction
-                // (if <test> <consequent> <alternate>)
+                // Branch: (if <test> <consequent> <alternate>)
                 else if (op == "if")
                 {
                     // Emit <test>
@@ -182,8 +195,7 @@ public:
                     auto endBranchAddr = getOffset();
                     patchJumpAddress(endAddr, endBranchAddr);
                 }
-                // While loop:
-                // (while <test> <body>)
+                // While loop: (while <test> <body>)
                 else if (op == "while")
                 {
                     auto loopStartAddr = getOffset();
@@ -219,8 +231,7 @@ public:
                     auto loopEndAddr = getOffset() + 1;
                     patchJumpAddress(loopEndJmpAddr, loopEndAddr);
                 }
-                // For loop:
-                // (for <vardec> <test> <varchange> <body>)
+                // For loop: (for <vardec> <test> <varchange> <body>)
                 else if (op == "for")
                 {
                     // Declare variable
@@ -267,8 +278,23 @@ public:
                 else if (op == "var")
                 {
                     auto varName = exp.list[1].string;
-                    // Initializer
-                    gen(exp.list[2]);
+
+                    // Special treatment of (var foo (lambda ...))
+                    // To capture function name from variable
+                    if (isLambda(exp.list[2]))
+                    {
+                        compileFunction(
+                            /* exp */ exp.list[2],
+                            /* name */ exp.list[1].string,
+                            /* params */ exp.list[2].list[1],
+                            /* body */ exp.list[2].list[2]);
+                    }
+                    else
+                    {
+                        // Initializer
+                        gen(exp.list[2]);
+                    }
+
                     // 1. Global vars
                     if (isGlobalScope())
                     {
@@ -341,61 +367,18 @@ public:
 
                     scopeExit();
                 }
-                // User defined functions
+                // User defined functions (def <name> <params> <body>)
                 else if (op == "def")
                 {
-                    // User defined functions
-                    // (def <name> <params> <body>)
+                    // Actually syntactic sugar for
+                    // (var <name> (lambda <params> <body>))
                     auto fnName = exp.list[1].string;
-                    auto params = exp.list[2].list;
-                    auto arity = params.size();
-                    auto body = exp.list[3];
 
-                    // Save previous code object:
-                    auto prevCo = co;
-
-                    // Function code object:
-                    auto coValue = createCodeObjectValue(fnName, arity);
-                    co = AS_CODE(coValue);
-
-                    // Store new co as a constant
-                    prevCo->addConstant(coValue);
-
-                    // Function name is registered as a local constant,
-                    // so the function can call itself recursively
-                    co->addLocal(fnName);
-
-                    // parameters are added as variables
-                    for (auto i = 0; i < arity; i++)
-                    {
-                        auto argName = params[i].string;
-                        co->addLocal(argName);
-                    }
-
-                    // Compile body in the new code object
-                    gen(body);
-
-                    if (!isBlock(body))
-                    {
-                        emit(OP_SCOPE_EXIT);
-                        emit(arity + 1);
-                    }
-
-                    // Explicit return to restore caller address
-                    emit(OP_RETURN);
-
-                    // Create the function:
-                    auto fn = ALLOC_FUNCTION(co);
-
-                    // Restore the previous code object
-                    co = prevCo;
-
-                    // Add function as a constant to our co
-                    co->addConstant(fn);
-
-                    // And emit code for this new constant:
-                    emit(OP_CONST);
-                    emit(co->constants.size() - 1);
+                    compileFunction(
+                        /* exp */ exp,
+                        /* name */ fnName,
+                        /* params */ exp.list[2],
+                        /* body */ exp.list[3]);
 
                     // Install the function as a variable
                     if (isGlobalScope())
@@ -411,21 +394,26 @@ public:
                         emit(co->getLocalIndex(fnName));
                     }
                 }
+                // Lambda expressions (lambda <params> <body)
+                else if (op == "lambda")
+                {
+                    compileFunction(
+                        /* exp */ exp,
+                        /* name */ "lambda",
+                        /* params */ exp.list[1],
+                        /* body */ exp.list[2]);
+                }
+                // Named function calls
                 else
                 {
-                    // Function calls
-                    // Push function onto the stack:
-                    gen(exp.list[0]);
-
-                    // Arguments:
-                    for (auto i = 1; i < exp.list.size(); i++)
-                    {
-                        gen(exp.list[i]);
-                    }
-
-                    emit(OP_CALL);
-                    emit(exp.list.size() - 1);
+                    FUNCTION_CALL(exp);
                 }
+            }
+            // Expression is a list but tag is not a symbol
+            // Lambda function calls
+            else
+            {
+                FUNCTION_CALL(exp);
             }
             break; // TODO
         }
@@ -480,6 +468,60 @@ private:
      * Emits bytecode
      */
     void emit(uint8_t code) { co->code.push_back(code); }
+
+    /**
+     * Compile a function
+     */
+    void compileFunction(const Exp &exp, const std::string fnName, const Exp &params, const Exp &body)
+    {
+        auto arity = params.list.size();
+
+        // Save previous code object:
+        auto prevCo = co;
+
+        // Function code object:
+        auto coValue = createCodeObjectValue(fnName, arity);
+        co = AS_CODE(coValue);
+
+        // Store new co as a constant
+        prevCo->addConstant(coValue);
+
+        // Function name is registered as a local constant,
+        // so the function can call itself recursively
+        co->addLocal(fnName);
+
+        // parameters are added as variables
+        for (auto i = 0; i < arity; i++)
+        {
+            auto argName = params.list[i].string;
+            co->addLocal(argName);
+        }
+
+        // Compile body in the new code object
+        gen(body);
+
+        if (!isBlock(body))
+        {
+            emit(OP_SCOPE_EXIT);
+            emit(arity + 1);
+        }
+
+        // Explicit return to restore caller address
+        emit(OP_RETURN);
+
+        // Create the function:
+        auto fn = ALLOC_FUNCTION(co);
+
+        // Restore the previous code object
+        co = prevCo;
+
+        // Add function as a constant to our co
+        co->addConstant(fn);
+
+        // And emit code for this new constant:
+        emit(OP_CONST);
+        emit(co->constants.size() - 1);
+    }
 
     /**
      * Allocates a numeric constant
@@ -586,6 +628,9 @@ private:
      * (var <name> <value>)
      */
     bool isVarDeclaration(const Exp &exp) { return isTaggedList(exp, "var"); }
+
+    // Check if Exp is a lambda (lambda ...)
+    bool isLambda(const Exp &exp) { return isTaggedList(exp, "lambda"); }
 
     /**
      * Blocks

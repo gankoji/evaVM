@@ -63,3 +63,26 @@ TEST(Functions, UserDefFunc2)
     log(result);
     EXPECT_EQ(result.number, 120);
 }
+
+TEST(Functions, Lambdas)
+{
+    EvaVM vm;
+
+    auto result = vm.exec(R"(
+        ((lambda (x) (* x x)) 2)
+    )");
+    log(result);
+    EXPECT_EQ(result.number, 4);
+}
+
+TEST(Functions, LambdaToVar)
+{
+    EvaVM vm;
+
+    auto result = vm.exec(R"(
+        (var newsquare (lambda (x) (* x x)))
+        (newsquare 2)
+    )");
+    log(result);
+    EXPECT_EQ(result.number, 4);
+}
