@@ -65,6 +65,7 @@ public:
         emit(OP_HALT);
     }
 
+    // Generate bytecode for an expression
     void gen(const Exp &exp)
     {
         switch (exp.type)
@@ -282,6 +283,8 @@ public:
                         emit(OP_SET_LOCAL);
                         emit(co->getLocalIndex(varName));
                     }
+
+                    break;
                 }
                 // Set variables: (set x 100)
                 else if (op == "set")
@@ -320,17 +323,12 @@ public:
 
                     for (auto i = 1; i < exp.list.size(); i++)
                     {
-                        if (exp.list[i].type == ExpType::STRING)
-                        {
-                            std::cout << exp.list[i].string;
-                        }
                         // The value of the last expression is the only value
                         // that should be kept on the stack.
                         bool isLast = i == exp.list.size() - 1;
 
                         // Local variables are the exception to the above rule
-                        bool isLocalDeclaration =
-                            isDeclaration(exp.list[i]) && !isGlobalScope();
+                        bool isLocalDeclaration = isDeclaration(exp.list[i]); //&&!isGlobalScope();
 
                         // Generate the code for this expression
                         gen(exp.list[i]);

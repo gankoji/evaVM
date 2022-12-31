@@ -203,6 +203,8 @@ public:
         for (;;)
         {
             auto opcode = READ_BYTE();
+            // opcode_pretty(opcode);
+            // dumpStack();
             switch (opcode)
             {
             case OP_HALT:
@@ -337,17 +339,12 @@ public:
                 // Simple operation: value on top of stack is the result of the
                 // block. We need to put it back after popping all local vars
                 auto result = pop();
-                popN(count - 1); // BUG: our result *might be one of the local vars*
-                                 // Ideal fix is to tell when that case happens,
-                                 // and adjust our count accordingly. Until
-                                 // then, this stops the segfaults.
+                popN(count);
                 push(result);
                 break;
             }
             case OP_CALL:
             {
-                printf("Calling.\n");
-                dumpStack();
                 auto argsCount = READ_BYTE();
                 auto fnValue = peek(argsCount);
 
@@ -380,8 +377,6 @@ public:
             }
             case OP_RETURN:
             {
-                printf("Returning\n");
-                dumpStack();
                 // Get the machine state we're restoring
                 auto callerFrame = callStack.top();
 
