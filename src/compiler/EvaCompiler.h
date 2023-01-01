@@ -11,6 +11,7 @@
 #include "src/bytecode/OpCode.h"
 #include "src/disassembler/EvaDisassembler.h"
 #include "src/parser/EvaParser.h"
+#include "src/parser/Scope.h"
 #include "src/vm/EvaValue.h"
 #include "src/vm/Logger.h"
 #include "src/vm/Global.h"
@@ -73,6 +74,9 @@ public:
         co = AS_CODE(createCodeObjectValue("main"));
         main = AS_FUNCTION(ALLOC_FUNCTION(co));
 
+        // Scope analysis.
+        analyze(exp, nullptr);
+
         // Recursively generate from top-level
         gen(exp);
 
@@ -80,8 +84,108 @@ public:
         emit(OP_HALT);
     }
 
+    // Scope analysis
+    void analyze(const Exp &exp, std::shared_ptr<Scope> scope)
+    {
+        if (exp.type == ExpType::SYMBOL)
+        {
+            if (exp.string == "true" || exp.string == "false")
+            {
+                // Do nothing
+            }
+            else
+            {
+                scope->maybePromote(exp.string);
+            }
+        }
+        else if (exp.type == ExpType::LIST)
+        {
+            auto tag = exp.list[0];
+
+            // Special cases
+            if (tag.type == ExpType::SYMBOL)
+            {
+                auto op = tag.string;
+
+                // Block scope:
+                if (op == "begin")
+                {
+                    auto newScope = std::make_shared<Scope>(
+                        scope == nullptr ? ScopeType::GLOBAL : ScopeType::BLOCK, scope);
+
+                    scopeInfo_[exp] = newScope;
+
+                    for (auto i = 1; i < exp.list.size(); ++i)
+                    {
+                        analyze(exp.list[i], newScope);
+                    }
+                }
+                // Variable declaration
+                else if (op == "var")
+                {
+                    scope->addLocal(exp.list[1].string);
+                    analyze(exp.list[2], scope);
+                }
+                // Function declaration
+                else if (op == "def")
+                {
+                    auto fnName = exp.list[1].string;
+                    auto arity = exp.list[2].list.size();
+
+                    scope->addLocal(fnName);
+
+                    auto newScope = std::make_shared<Scope>(ScopeType::FUNCTION, scope);
+                    scopeInfo_[&exp] = newScope;
+
+                    newScope->addLocal(fnName);
+
+                    // Params
+                    for (auto i = 0; i < arity; i++)
+                    {
+                        newScope->addLocal(exp.list[2].list[i].string);
+                    }
+
+                    // Body
+                    analyze(exp.list[3], newScope);
+                }
+                // Lambda functions
+                else if (op == "lambda")
+                {
+                    auto arity = exp.list[1].list.size();
+
+                    auto newScope = std::make_shared<Scope>(ScopeType::FUNCTION, scope);
+                    scopeInfo_[&exp] = newScope;
+
+                    // Params
+                    for (auto i = 0; i < arity; i++)
+                    {
+                        newScope->addLocal(exp.list[1].list[i].string);
+                    }
+
+                    // Body
+                    analyze(exp.list[2], newScope);
+                }
+                else
+                {
+                    for (auto i = 1; i < exp.list.size(); i++)
+                    {
+                        analyze(exp.list[i], scope);
+                    }
+                }
+            }
+            else
+            {
+                for (auto i = 1; i < exp.list.size(); i++)
+                {
+                    analyze(exp.list[i], scope);
+                }
+            }
+        }
+    }
+
     // Generate bytecode for an expression
-    void gen(const Exp &exp)
+    void
+    gen(const Exp &exp)
     {
         switch (exp.type)
         {
@@ -443,6 +547,9 @@ private:
      * Global vars object
      */
     std::shared_ptr<Global> global;
+
+    // Scope info
+    std::map<Exp *, std::shared_ptr<Scope>> scopeInfo_;
 
     /**
      * Compiled code object
