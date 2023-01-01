@@ -6,12 +6,13 @@
 #define EvaCompiler_h
 
 #include <map>
+#include <unordered_map>
 #include <string>
 
 #include "src/bytecode/OpCode.h"
+#include "src/compiler/Scope.h"
 #include "src/disassembler/EvaDisassembler.h"
 #include "src/parser/EvaParser.h"
-#include "src/parser/Scope.h"
 #include "src/vm/EvaValue.h"
 #include "src/vm/Logger.h"
 #include "src/vm/Global.h"
@@ -65,9 +66,7 @@ class EvaCompiler
 public:
     EvaCompiler(std::shared_ptr<Global> global) : disassembler(std::make_unique<EvaDisassembler>(global)), global(global) {}
 
-    /**
-     * Main compile API
-     */
+    // Main compile API
     void compile(const Exp &exp)
     {
         // Allocate new code object
@@ -113,7 +112,7 @@ public:
                     auto newScope = std::make_shared<Scope>(
                         scope == nullptr ? ScopeType::GLOBAL : ScopeType::BLOCK, scope);
 
-                    scopeInfo_[exp] = newScope;
+                    scopeInfo_[&exp] = newScope;
 
                     for (auto i = 1; i < exp.list.size(); ++i)
                     {
@@ -184,8 +183,7 @@ public:
     }
 
     // Generate bytecode for an expression
-    void
-    gen(const Exp &exp)
+    void gen(const Exp &exp)
     {
         switch (exp.type)
         {
@@ -449,7 +447,8 @@ public:
                 // Blocks/environments/scopes/closures (begin <body>)
                 else if (op == "begin")
                 {
-                    scopeEnter();
+                    scopeStack_.push(scopeInfo_.at(&exp));
+                    blockEnter();
 
                     for (auto i = 1; i < exp.list.size(); i++)
                     {
@@ -469,7 +468,8 @@ public:
                         }
                     }
 
-                    scopeExit();
+                    blockExit();
+                    scopeStack_.pop();
                 }
                 // User defined functions (def <name> <params> <body>)
                 else if (op == "def")
@@ -523,9 +523,7 @@ public:
         }
     }
 
-    /**
-     * Disassemble all compilation units
-     */
+    // Disassemble all compilation units
     void disassembleBytecode()
     {
         for (auto &co : codeObjects_)
@@ -549,7 +547,10 @@ private:
     std::shared_ptr<Global> global;
 
     // Scope info
-    std::map<Exp *, std::shared_ptr<Scope>> scopeInfo_;
+    std::map<const Exp *, std::shared_ptr<Scope>> scopeInfo_;
+
+    // Scopes stack
+    std::stack<std::shared_ptr<Scope>> scopeStack_;
 
     /**
      * Compiled code object
@@ -687,14 +688,14 @@ private:
     }
 
     /**
-     * Enter a new scope. Increase the scope level
+     * Enter a new block. Increase the scope level
      */
-    void scopeEnter() { co->scopeLevel++; }
+    void blockEnter() { co->scopeLevel++; }
 
     /**
-     * Exit a scope. Decrease the scope level
+     * Exit a block. Decrease the scope level
      */
-    void scopeExit()
+    void blockExit()
     {
         // Pop vars from the stack if they were declared
         // within this specific scope

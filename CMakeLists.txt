@@ -4,7 +4,7 @@ project(eva-vm)
 
 enable_testing()
 # Google test
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED)
 
 include(FetchContent)

@@ -56,6 +56,12 @@
 #define OP_CALL 0x0F
 #define OP_RETURN 0x10
 
+/**
+ * Closures
+ */
+#define OP_GET_CELL 0x11
+#define OP_SET_CELL 0x12
+
 // --------------------
 #define OP_STR(op) \
     case OP_##op:  \
@@ -82,6 +88,8 @@ std::string opcodeToString(uint8_t opcode)
         OP_STR(SCOPE_EXIT);
         OP_STR(CALL);
         OP_STR(RETURN);
+        OP_STR(GET_CELL);
+        OP_STR(SET_CELL);
     default:
         DIE << "opcodeToString: unknown opcode: " << std::hex << (int)opcode;
     }
