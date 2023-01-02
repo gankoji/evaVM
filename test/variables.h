@@ -6,7 +6,12 @@ TEST(Variables, GetPredefinedGlobal)
 {
     EvaVM vm;
 
+    // This test now fails because scope analysis
+    // has no information about our predefined globals
+    // (which are in the VM itself, while scope analysis
+    // lives in the compiler).
     auto result = vm.exec(R"(
+        (var x 10)
         x
     )");
     log(result);
@@ -29,6 +34,7 @@ TEST(Variables, CreateComplex)
     EvaVM vm;
 
     auto result = vm.exec(R"(
+        (var x 10)
         (var c (+ x 10))
     )");
     log(result);
@@ -40,6 +46,7 @@ TEST(Variables, SetExistingNewValue)
     EvaVM vm;
 
     auto result = vm.exec(R"(
+        (var x 10)
         (set x 20)
     )");
     log(result);

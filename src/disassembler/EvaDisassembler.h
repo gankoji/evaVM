@@ -86,7 +86,10 @@ private:
             return disassembleLocal(co, opcode, offset);
         case OP_GET_CELL:
         case OP_SET_CELL:
+        case OP_LOAD_CELL:
             return disassembleCell(co, opcode, offset);
+        case OP_MAKE_FUNCTION:
+            return disassembleMakeFunction(co, opcode, offset);
         default:
             DIE << "disassembleInstruction: no disassembly for "
                 << opcodeToString(opcode)
@@ -167,6 +170,12 @@ private:
         auto cellIndex = co->code[offset + 1];
         std::cout << (int)cellIndex << " (" << co->cellNames[cellIndex] << ")";
         return offset + 2;
+    }
+
+    // Disassemble the make function instruction
+    size_t disassembleMakeFunction(CodeObject *co, uint8_t opcode, size_t offset)
+    {
+        return disassembleWord(co, opcode, offset);
     }
 
     /**

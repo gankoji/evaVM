@@ -61,6 +61,8 @@
  */
 #define OP_GET_CELL 0x11
 #define OP_SET_CELL 0x12
+#define OP_LOAD_CELL 0x13
+#define OP_MAKE_FUNCTION 0x14
 
 // --------------------
 #define OP_STR(op) \
@@ -90,6 +92,8 @@ std::string opcodeToString(uint8_t opcode)
         OP_STR(RETURN);
         OP_STR(GET_CELL);
         OP_STR(SET_CELL);
+        OP_STR(LOAD_CELL);
+        OP_STR(MAKE_FUNCTION);
     default:
         DIE << "opcodeToString: unknown opcode: " << std::hex << (int)opcode;
     }

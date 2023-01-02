@@ -6,3 +6,4 @@
 #include "variables.h"
 #include "localvars.h"
 #include "functions.h"
+#include "closures.h"

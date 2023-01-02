@@ -9,21 +9,14 @@ int main(int argc, char const *argv[])
     EvaVM vm;
 
     auto result = vm.exec(R"(
-        (var x 10)
-        (def foo () x) // x is a free variable, but is not closed since it's global
-
-        (begin
-            (var y 100) // a cell variable
-            (var q 300) // local
-            q
-            (* y x)
+        (def createCounter ()
             (begin
-                (var z 200) // cell
-                z
-                (def bar () (+ y z)) // y is free, and should be closed over, its not global
-                (bar)))
-
-
+                (var value 0)
+                (def inc () (set value (+ value 1)))
+                inc))
+        (var fn1 (createCounter))
+        (fn1)
+        (fn1)
     )");
 
     log(result);

@@ -20,6 +20,6 @@ public:
 #define DIE ErrorLogMessage()
 
 #define log(value) std::cout << #value << " = " << (value) << "\n";
-#define opcode_pretty(value) printf("Opcode: 0x%.2X\n", value);
+#define opcode_pretty(value) printf("Prettified opcode: %d 0x%.2X\n", opcode, opcode)
 
 #endif /* __Logger_h */

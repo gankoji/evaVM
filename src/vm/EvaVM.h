@@ -165,7 +165,7 @@ public:
      */
     EvaValue peek(const size_t offset = 0)
     {
-        if (stack.size() == 0)
+        if (stack.size() == 0 || sp == stack.begin())
         {
             DIE << "peek(): empty stack." << std::endl;
         }
@@ -192,7 +192,7 @@ public:
         // Emit the disassembly
         compiler->disassembleBytecode();
 
-        return NUMBER(1);
+        // return NUMBER(1);
         return eval();
     }
 
@@ -204,7 +204,7 @@ public:
         for (;;)
         {
             auto opcode = READ_BYTE();
-            // opcode_pretty(opcode);
+            opcode_pretty(opcode);
             // dumpStack();
             switch (opcode)
             {
@@ -302,9 +302,13 @@ public:
             }
             case OP_SET_GLOBAL:
             {
+                printf("No segfault.\n");
                 auto globalIndex = READ_BYTE();
+                printf("No segfault.\n");
                 auto value = peek(0);
+                printf("No segfault.\n");
                 global->set(globalIndex, value);
+                printf("No segfault.\n");
                 break;
             }
             case OP_POP:
@@ -366,8 +370,14 @@ public:
 
                 // User defined function
                 auto callee = AS_FUNCTION(fnValue);
+
                 // Need to save state of machine to restore after call
                 callStack.push(Frame{ip, bp, fn});
+
+                // Shrink cells vector to the size of *only* free vars,
+                // since other cells should be reallocated for each
+                // invocation.
+                fn->cells.resize(fn->co->freeCount);
 
                 // Now set the machine state to the new function
                 fn = callee;               // Access local values for the function
@@ -388,8 +398,53 @@ public:
                 callStack.pop();
                 break;
             }
+            case OP_GET_CELL:
+            {
+                auto cellIndex = READ_BYTE();
+                push(fn->cells[cellIndex]->value);
+                break;
+            }
+            case OP_SET_CELL:
+            {
+                auto cellIndex = READ_BYTE();
+                auto value = peek(0);
+
+                if (fn->cells.size() <= cellIndex)
+                {
+                    // Allocate the cell if it doesn't yet exist
+                    fn->cells.push_back(AS_CELL(ALLOC_CELL(value)));
+                }
+                else
+                {
+                    // Update the cell
+                    fn->cells[cellIndex]->value = value;
+                }
+                break;
+            }
+            case OP_LOAD_CELL:
+            {
+                auto cellIndex = READ_BYTE();
+                push(CELL(fn->cells[cellIndex]));
+                break;
+            }
+            case OP_MAKE_FUNCTION:
+            {
+                auto co = AS_CODE(pop());
+                auto cellsCount = READ_BYTE();
+
+                auto fnValue = ALLOC_FUNCTION(co);
+                auto fn = AS_FUNCTION(fnValue);
+
+                for (auto i = 0; i < cellsCount; i++)
+                {
+                    fn->cells.push_back(AS_CELL(pop()));
+                }
+
+                push(fnValue);
+                break;
+            }
             default:
-                printf("Better logging? opcode at fault: %d 0x%.2X\n", opcode, opcode);
+                opcode_pretty(opcode);
                 DIE << "Unknown opcode: " << std::hex << opcode << std::dec << opcode;
             }
         }
