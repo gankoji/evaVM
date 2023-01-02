@@ -192,6 +192,7 @@ public:
         // Emit the disassembly
         compiler->disassembleBytecode();
 
+        return NUMBER(1);
         return eval();
     }
 

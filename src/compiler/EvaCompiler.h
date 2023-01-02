@@ -206,24 +206,28 @@ public:
             else
             {
                 auto varName = exp.string;
-                auto localIndex = co->getLocalIndex(varName);
 
-                if (localIndex != -1)
+                // Get the appropriate opcode for this variable based on its scope
+                auto opCodeGetter = scopeStack_.top()->getNameGetter(varName);
+                emit(opCodeGetter);
+
+                // Check if its local
+                if (opCodeGetter == OP_GET_LOCAL)
                 {
-                    // 1. Local vars
-                    emit(OP_GET_LOCAL);
-                    emit(localIndex);
+                    emit(co->getLocalIndex(varName));
                 }
-
-                // 2. Global vars
+                // or if its a cell
+                else if (opCodeGetter == OP_GET_CELL)
+                {
+                    emit(co->getCellIndex(varName));
+                }
+                // if not, it must be global
                 else
                 {
                     if (!global->exists(varName))
                     {
                         DIE << "[EvaCompiler]: Reference error: " << varName << " does not exist, could not get its value." << std::endl;
                     }
-
-                    emit(OP_GET_GLOBAL);
                     emit(global->getGlobalIndex(varName));
                 }
             }
@@ -380,6 +384,7 @@ public:
                 else if (op == "var")
                 {
                     auto varName = exp.list[1].string;
+                    auto opCodeSetter = scopeStack_.top()->getNameSetter(varName);
 
                     // Special treatment of (var foo (lambda ...))
                     // To capture function name from variable
@@ -398,13 +403,23 @@ public:
                     }
 
                     // 1. Global vars
-                    if (isGlobalScope())
+                    if (opCodeSetter == OP_SET_GLOBAL)
                     {
                         global->define(varName);
                         emit(OP_SET_GLOBAL);
                         emit(global->getGlobalIndex(varName));
                     }
-                    // 2. Local vars
+                    // 2. Cells
+                    else if (opCodeSetter == OP_SET_CELL)
+                    {
+                        co->cellNames.push_back(varName);
+                        emit(OP_SET_CELL);
+                        emit(co->cellNames.size() - 1);
+                        // Explicitly pop the value from the stack,
+                        // since it's promoted to the heap:
+                        emit(OP_POP);
+                    }
+                    // 3. Local vars
                     else
                     {
                         co->addLocal(varName);
@@ -418,21 +433,24 @@ public:
                 else if (op == "set")
                 {
                     auto varName = exp.list[1].string;
+                    auto opCodeSetter = scopeStack_.top()->getNameSetter(varName);
 
                     // Set Value on top of stack
                     gen(exp.list[2]);
 
-                    // Check if var is local
-                    auto localIndex = co->getLocalIndex(varName);
-
                     // 1. Local vars
-                    if (localIndex != -1)
+                    if (opCodeSetter == OP_SET_LOCAL)
                     {
                         emit(OP_SET_LOCAL);
-                        emit(localIndex);
+                        emit(co->getLocalIndex(varName));
                     }
-
-                    // 2. Global vars
+                    // 2. Cell vars
+                    else if (opCodeSetter == OP_SET_CELL)
+                    {
+                        emit(OP_SET_CELL);
+                        emit(co->getCellIndex(varName));
+                    }
+                    // 3. Global vars
                     else
                     {
                         auto globalIndex = global->getGlobalIndex(varName);
@@ -582,6 +600,9 @@ private:
      */
     void compileFunction(const Exp &exp, const std::string fnName, const Exp &params, const Exp &body)
     {
+        auto scopeInfo = scopeInfo_.at(&exp);
+        scopeStack_.push(scopeInfo);
+
         auto arity = params.list.size();
 
         // Save previous code object:
@@ -590,6 +611,15 @@ private:
         // Function code object:
         auto coValue = createCodeObjectValue(fnName, arity);
         co = AS_CODE(coValue);
+
+        // Put 'free' and 'cells' from the scope into the
+        // cellNames of the code object.
+        co->freeCount = scopeInfo->free.size();
+        co->cellNames.reserve(scopeInfo->free.size() + scopeInfo->cell.size());
+        co->cellNames.insert(co->cellNames.end(), scopeInfo->free.begin(),
+                             scopeInfo->free.end());
+        co->cellNames.insert(co->cellNames.end(), scopeInfo->cell.begin(),
+                             scopeInfo->cell.end());
 
         // Store new co as a constant
         prevCo->addConstant(coValue);
@@ -603,6 +633,16 @@ private:
         {
             auto argName = params.list[i].string;
             co->addLocal(argName);
+
+            // NOTE: if the param is captured by a cell, emit the code
+            // for it. We also don't pop the param value in this case,
+            // since OP_SCOPE_EXIT would pop it.
+            auto cellIndex = co->getCellIndex(argName);
+            if (cellIndex != -1)
+            {
+                emit(OP_SET_CELL);
+                emit(cellIndex);
+            }
         }
 
         // Compile body in the new code object
@@ -629,6 +669,8 @@ private:
         // And emit code for this new constant:
         emit(OP_CONST);
         emit(co->constants.size() - 1);
+
+        scopeStack_.pop();
     }
 
     /**

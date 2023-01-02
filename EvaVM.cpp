@@ -15,8 +15,11 @@ int main(int argc, char const *argv[])
         (begin
             (var y 100) // a cell variable
             (var q 300) // local
+            q
+            (* y x)
             (begin
                 (var z 200) // cell
+                z
                 (def bar () (+ y z)) // y is free, and should be closed over, its not global
                 (bar)))
 

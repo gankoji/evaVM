@@ -8,6 +8,7 @@
 
 #include <map>
 #include <set>
+#include "src/bytecode/OpCode.h"
 
 // Scope type.
 enum class ScopeType
@@ -107,6 +108,38 @@ struct Scope
 
         // Recursively resolve in the parent scope.
         return parent->resolve(name, allocType);
+    }
+
+    // Determine which get opcode should be emitted
+    int getNameGetter(const std::string &name)
+    {
+        switch (allocInfo[name])
+        {
+        case AllocType::GLOBAL:
+            return OP_GET_GLOBAL;
+        case AllocType::LOCAL:
+            return OP_GET_LOCAL;
+        case AllocType::CELL:
+            return OP_GET_CELL;
+        default:
+            DIE << "[Scope] Invalid allocType for var " << name << ". Cannot proceed." << std::endl;
+        }
+    }
+
+    // Determine which set opcode should be emitted
+    int getNameSetter(const std::string &name)
+    {
+        switch (allocInfo[name])
+        {
+        case AllocType::GLOBAL:
+            return OP_SET_GLOBAL;
+        case AllocType::LOCAL:
+            return OP_SET_LOCAL;
+        case AllocType::CELL:
+            return OP_SET_CELL;
+        default:
+            DIE << "[Scope] Invalid allocType for var " << name << ". Cannot proceed with emitting a set opcode." << std::endl;
+        }
     }
 
     // Promote a variable from local (stack) to cell (heap).
