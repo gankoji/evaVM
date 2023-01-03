@@ -1,7 +1,5 @@
-/**
- * Eva Disassembler.
- * Reconstruct textual representation of Eva bytecode
- */
+//  Eva Disassembler.
+//  Reconstruct textual representation of Eva bytecode
 
 #ifndef EvaDisassembler_h
 #define EvaDisassembler_h
@@ -41,9 +39,7 @@ private:
     // Global var object
     std::shared_ptr<Global> global;
 
-    /**
-     * Disassembles a single instruction/bytecode.
-     */
+    // Disassembles a single instruction/bytecode.
     size_t disassembleInstruction(CodeObject *co, size_t offset)
     {
         std::ios_base::fmtflags f(std::cout.flags());
@@ -105,9 +101,7 @@ private:
         return offset + 1;
     }
 
-    /**
-     * Disassembles a two-byte word
-     */
+    // Disassembles a two-byte word
     size_t disassembleWord(CodeObject *co, uint8_t opcode, size_t offset)
     {
         dumpBytes(co, offset, 2);

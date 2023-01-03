@@ -56,9 +56,7 @@
         emit(exp.list.size() - 1);                 \
     } while (false)
 
-/**
- * Compiler class, emits bytecode, records constant pool, vars, etc.
- */
+// Compiler class, emits bytecode, records constant pool, vars, etc.
 class EvaCompiler
 {
 public:
@@ -720,10 +718,8 @@ private:
         co->code[offset] = value;
     }
 
-    /**
-     * Patches jump addresses for branching. Implicitly assumes that
-     * addresses are two bytes long.
-     */
+    // Patches jump addresses for branching. Implicitly assumes that
+    // addresses are two bytes long.
     void patchJumpAddress(size_t offset, uint16_t value)
     {
         writeByteAtOffset(offset, (value >> 8) & 0xFF);

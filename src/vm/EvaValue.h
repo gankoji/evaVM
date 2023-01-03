@@ -1,5 +1,4 @@
 // Eva Value Types
-
 #ifndef EvaValue_h
 #define EvaValue_h
 
@@ -177,11 +176,8 @@ struct CodeObject : public Object
     }
 };
 
-/**
- * Heap-allocated cell.
- *
- * Used to capture closure variables
- */
+// Heap-allocated cell.
+// Used to capture closure variables
 struct CellObject : public Object
 {
     CellObject(EvaValue value) : Object(ObjectType::CELL), value(value) {}
@@ -193,10 +189,8 @@ struct FunctionObject : public Object
 {
     FunctionObject(CodeObject *co) : Object(ObjectType::FUNCTION), co(co) {}
 
-    /**
-     * Reference to the code object:
-     * contains function code, locals, etc.
-     */
+    // Reference to the code object:
+    // contains function code, locals, etc.
     CodeObject *co;
 
     // Captured cells (for closures).

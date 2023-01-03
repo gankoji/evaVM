@@ -17,10 +17,8 @@
 
 #define STACK_LIMIT 512
 
-/**
- * Reads the current byte in the bytecode
- * and advances the instruction pointer
- */
+// Reads the current byte in the bytecode
+// and advances the instruction pointer
 #define READ_BYTE() *ip++
 
 // Reads a short word (2 bytes) from bytecode
@@ -29,10 +27,8 @@
 // Converts bytecode index to a pointer
 #define TO_ADDRESS(index) &fn->co->code[index]
 
-/**
- * Gets a constant at the index in pool
- * defined by the next bytecode
- */
+// Gets a constant at the index in pool
+// defined by the next bytecode
 #define GET_CONST() fn->co->constants[READ_BYTE()]
 
 // Binary operation
@@ -45,11 +41,9 @@
         push(NUMBER(result));        \
     } while (false)
 
-/**
- * Generic comparison operation
- * Rather than testing the numbers here, we could use a map
- * that is the inverse of compareOps_ in EvaCompiler.h
- */
+// Generic comparison operation
+// Rather than testing the numbers here, we could use a map
+// that is the inverse of compareOps_ in EvaCompiler.h
 #define COMPARE_VALUES(op, v1, v2)                                     \
     do                                                                 \
     {                                                                  \
