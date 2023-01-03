@@ -100,7 +100,6 @@ public:
         else if (exp.type == ExpType::LIST)
         {
             auto tag = exp.list[0];
-
             // Special cases
             if (tag.type == ExpType::SYMBOL)
             {
@@ -480,7 +479,7 @@ public:
                         // Generate the code for this expression
                         gen(exp.list[i]);
 
-                        if (!isLast && !isDecl)
+                        if (!isLast && !isDecl && !isGlobalSet(exp.list[i]))
                         {
                             emit(OP_POP);
                         }
@@ -815,6 +814,7 @@ private:
     // Check if Exp is a lambda (lambda ...)
     bool isLambda(const Exp &exp) { return isTaggedList(exp, "lambda"); }
 
+    bool isGlobalSet(const Exp &exp) { return isTaggedList(exp, "set") && co->scopeLevel == 1; }
     /**
      * Blocks
      */

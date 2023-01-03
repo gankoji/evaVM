@@ -12,11 +12,16 @@ int main(int argc, char const *argv[])
         (def createCounter ()
             (begin
                 (var value 0)
-                (def inc () (set value (+ value 1)))
+                (def inc () (begin (set value (+ value 1))))
                 inc))
         (var fn1 (createCounter))
-        (fn1)
-        (fn1)
+        // (fn1)
+        // (fn1)
+        // 
+        // (var fn2 (createCounter))
+        // (fn2)
+        // 
+        // (+ (fn1) (fn2))
     )");
 
     log(result);

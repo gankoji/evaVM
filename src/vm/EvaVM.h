@@ -204,7 +204,7 @@ public:
         for (;;)
         {
             auto opcode = READ_BYTE();
-            opcode_pretty(opcode);
+            // opcode_pretty(opcode);
             // dumpStack();
             switch (opcode)
             {
@@ -302,13 +302,9 @@ public:
             }
             case OP_SET_GLOBAL:
             {
-                printf("No segfault.\n");
                 auto globalIndex = READ_BYTE();
-                printf("No segfault.\n");
                 auto value = peek(0);
-                printf("No segfault.\n");
                 global->set(globalIndex, value);
-                printf("No segfault.\n");
                 break;
             }
             case OP_POP:
@@ -374,15 +370,11 @@ public:
                 // Need to save state of machine to restore after call
                 callStack.push(Frame{ip, bp, fn});
 
-                // Shrink cells vector to the size of *only* free vars,
-                // since other cells should be reallocated for each
-                // invocation.
-                fn->cells.resize(fn->co->freeCount);
-
                 // Now set the machine state to the new function
-                fn = callee;               // Access local values for the function
-                bp = sp - argsCount - 1;   // Base (frame) pointer for the call
-                ip = &callee->co->code[0]; // Jumps to the function code
+                fn = callee;                         // Access local values for the function
+                fn->cells.resize(fn->co->freeCount); // Shrink cells vector to the size of *only* free vars
+                bp = sp - argsCount - 1;             // Base (frame) pointer for the call
+                ip = &callee->co->code[0];           // Jumps to the function code
 
                 break;
             }
