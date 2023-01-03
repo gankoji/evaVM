@@ -6,6 +6,7 @@
 #define EvaValue_h
 
 #include <functional>
+#include <list>
 #include "src/vm/Logger.h"
 
 /**
@@ -30,10 +31,58 @@ enum class ObjectType
     CELL,
 };
 
-/**
- * Base Object
- */
-struct Object
+// Base traceable object
+struct Traceable
+{
+    bool marked;
+    size_t size;
+    static size_t bytesAllocated;
+    static std::list<Traceable *> objects;
+
+    // Custom allocator for our traceability
+    static void *operator new(size_t size)
+    {
+        void *object = ::operator new(size);
+        ((Traceable *)object)->size = size;
+        Traceable::objects.push_back((Traceable *)object);
+        Traceable::bytesAllocated += size;
+        return object;
+    }
+
+    // Custom deallocator for same
+    static void operator delete(void *object, std::size_t sz)
+    {
+        Traceable::bytesAllocated -= ((Traceable *)object)->size;
+        ::operator delete(object, sz);
+        // Note: remove from Traceable::objects during GC cycle.
+    }
+
+    // Clean up all objects
+    static void cleanup()
+    {
+        for (auto &object : objects)
+        {
+            delete object;
+        }
+        objects.clear();
+    }
+
+    // Memory stats
+    static void printStats()
+    {
+        std::cout << "------------------------------" << std::endl;
+        std::cout << "Memory stats:" << std::endl
+                  << std::endl;
+        std::cout << "Objects allocated: " << std::dec << Traceable::objects.size() << std::endl;
+        std::cout << "Bytes allocated: " << std::dec << Traceable::bytesAllocated << std::endl;
+    }
+};
+
+size_t Traceable::bytesAllocated{0};
+std::list<Traceable *> Traceable::objects{};
+
+// Base Object
+struct Object : public Traceable
 {
     Object(ObjectType type) : type(type) {}
     ObjectType type;

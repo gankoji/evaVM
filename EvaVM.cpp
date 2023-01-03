@@ -6,25 +6,27 @@
 // Eva VM main executable
 int main(int argc, char const *argv[])
 {
-    EvaVM vm;
+    {
+        EvaVM vm;
 
-    auto result = vm.exec(R"(
-        (def createCounter ()
-            (begin
-                (var value 0)
-                (def inc () (begin (set value (+ value 1))))
-                inc))
-        (var fn1 (createCounter))
-        // (fn1)
-        // (fn1)
-        // 
-        // (var fn2 (createCounter))
-        // (fn2)
-        // 
-        // (+ (fn1) (fn2))
-    )");
+        Traceable::printStats();
 
-    log(result);
+        auto result = vm.exec(R"(
+        // --- Garbage Collection (GC) ----
+        // 1. Tracing heap
+        // 2. GC roots (globals, constants, variables on the stack)
+        // 3. Mark-Sweep GC algorithm
+        (+ "hello" ", world") // leaking "hello, world" string
+        (+ "hello" ", world")
 
+
+        )");
+
+        log(result);
+
+        Traceable::printStats();
+    }
+
+    Traceable::printStats();
     return 0;
 }

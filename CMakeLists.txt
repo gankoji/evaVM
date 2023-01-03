@@ -2,6 +2,10 @@
 cmake_minimum_required(VERSION 3.10)
 project(eva-vm)
 
+if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.24.0")
+    cmake_policy(SET CMP0135 NEW)
+endif()
+
 enable_testing()
 # Google test
 set(CMAKE_CXX_STANDARD 17)
@@ -20,7 +24,7 @@ add_subdirectory(test)
 
 # Build our actual program
 set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
-add_compile_options(-Wall -ggdb3)
+add_compile_options(-Wall -ggdb3 -fsized-deallocation)
 
 include_directories(./)
 add_executable(eva-vm EvaVM.cpp)

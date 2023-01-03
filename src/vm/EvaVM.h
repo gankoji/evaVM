@@ -113,6 +113,10 @@ public:
         setGlobalVariables();
     }
 
+    ~EvaVM()
+    {
+        Traceable::cleanup();
+    }
     /**
      * Pushes a value onto the stack
      */
