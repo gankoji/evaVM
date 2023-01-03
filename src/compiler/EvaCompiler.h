@@ -71,7 +71,9 @@ public:
     {
         // Allocate new code object
         co = AS_CODE(createCodeObjectValue("main"));
+
         main = AS_FUNCTION(ALLOC_FUNCTION(co));
+        constantObjects_.insert((Traceable *)main);
 
         // Scope analysis.
         analyze(exp, nullptr);
@@ -584,6 +586,9 @@ private:
      */
     std::vector<CodeObject *> codeObjects_;
 
+    // GC Roots (things that should live as long as the VM)
+    std::set<Traceable *> constantObjects_;
+
     /**
      * Comparison operators map
      */
@@ -665,6 +670,7 @@ private:
         {
             // Create the function:
             auto fn = ALLOC_FUNCTION(co);
+            constantObjects_.insert((Traceable *)AS_OBJECT(fn));
 
             // Restore the previous code object
             co = prevCo;
@@ -758,8 +764,12 @@ private:
         auto coValue = ALLOC_CODE(name, arity);
         auto co = AS_CODE(coValue);
         codeObjects_.push_back(co);
+        constantObjects_.insert((Traceable *)co);
         return coValue;
     }
+
+    // Get all GC Roots
+    std::set<Traceable *> &getConstantObjects() { return constantObjects_; }
 
     /**
      * Enter a new block. Increase the scope level

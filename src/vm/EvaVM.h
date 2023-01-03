@@ -117,6 +117,7 @@ public:
     {
         Traceable::cleanup();
     }
+
     /**
      * Pushes a value onto the stack
      */
