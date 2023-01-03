@@ -1,6 +1,4 @@
-/**
- * Eva Compiler
- */
+// Eva Compiler
 
 #ifndef EvaCompiler_h
 #define EvaCompiler_h
@@ -555,14 +553,10 @@ public:
     FunctionObject *getMainFunction() { return main; }
 
 private:
-    /**
-     * Disassembler
-     */
+    // Disassembler
     std::unique_ptr<EvaDisassembler> disassembler;
 
-    /**
-     * Global vars object
-     */
+    // Global vars object
     std::shared_ptr<Global> global;
 
     // Scope info
@@ -571,37 +565,25 @@ private:
     // Scopes stack
     std::stack<std::shared_ptr<Scope>> scopeStack_;
 
-    /**
-     * Compiled code object
-     */
+    // Compiled code object
     CodeObject *co;
 
-    /**
-     * Main entry point (function)
-     */
+    // Main entry point (function)
     FunctionObject *main;
 
-    /**
-     * All code objects
-     */
+    // All code objects
     std::vector<CodeObject *> codeObjects_;
 
     // GC Roots (things that should live as long as the VM)
     std::set<Traceable *> constantObjects_;
 
-    /**
-     * Comparison operators map
-     */
+    // Comparison operators map
     static std::map<std::string, uint8_t> compareOps_;
 
-    /**
-     * Emits bytecode
-     */
+    // Emits bytecode
     void emit(uint8_t code) { co->code.push_back(code); }
 
-    /**
-     * Compile a function
-     */
+    // Compile a function
     void compileFunction(const Exp &exp, const std::string fnName, const Exp &params, const Exp &body)
     {
         auto scopeInfo = scopeInfo_.at(&exp);
@@ -711,36 +693,28 @@ private:
         scopeStack_.pop();
     }
 
-    /**
-     * Allocates a numeric constant
-     */
+    // Allocates a numeric constant
     size_t numericConstIdx(double value)
     {
         ALLOC_CONST(IS_NUMBER, AS_NUMBER, NUMBER, value);
         return co->constants.size() - 1;
     }
 
-    /**
-     * Allocates a string constant
-     */
+    // Allocates a string constant
     size_t stringConstIdx(const std::string &value)
     {
         ALLOC_CONST(IS_STRING, AS_CPPSTRING, ALLOC_STRING, value);
         return co->constants.size() - 1;
     }
 
-    /**
-     * Allocates a boolean constant
-     */
+    // Allocates a boolean constant
     size_t booleanConstIdx(const bool value)
     {
         ALLOC_CONST(IS_BOOLEAN, AS_BOOLEAN, BOOLEAN, value);
         return co->constants.size() - 1;
     }
 
-    /**
-     * Writes byte at offset in code object
-     */
+    // Writes byte at offset in code object
     void writeByteAtOffset(size_t offset, uint8_t value)
     {
         co->code[offset] = value;
@@ -756,9 +730,7 @@ private:
         writeByteAtOffset(offset + 1, value & 0xFF);
     }
 
-    /**
-     * Creates a new code object.
-     */
+    // Creates a new code object.
     EvaValue createCodeObjectValue(const std::string &name, size_t arity = 0)
     {
         auto coValue = ALLOC_CODE(name, arity);
@@ -771,14 +743,10 @@ private:
     // Get all GC Roots
     std::set<Traceable *> &getConstantObjects() { return constantObjects_; }
 
-    /**
-     * Enter a new block. Increase the scope level
-     */
+    // Enter a new block. Increase the scope level
     void blockEnter() { co->scopeLevel++; }
 
-    /**
-     * Exit a block. Decrease the scope level
-     */
+    // Exit a block. Decrease the scope level
     void blockExit()
     {
         // Pop vars from the stack if they were declared
@@ -801,50 +769,36 @@ private:
         co->scopeLevel--;
     }
 
-    /**
-     * Check whether we're at global scope
-     */
+    // Check whether we're at global scope
     bool isGlobalScope() { return co->name == "main" && co->scopeLevel == 1; }
 
-    /**
-     * Check if we're in a function body
-     */
+    // Check if we're in a function body
     bool isFunctionBody() { return co->name != "main" && co->scopeLevel == 1; }
 
-    /**
-     * Check if expression is a declaration
-     */
+    // Check if expression is a declaration
     bool isDeclaration(const Exp &exp) { return isVarDeclaration(exp); }
 
-    /**
-     * (var <name> <value>)
-     */
+    // (var <name> <value>)
     bool isVarDeclaration(const Exp &exp) { return isTaggedList(exp, "var"); }
 
     // Check if Exp is a lambda (lambda ...)
     bool isLambda(const Exp &exp) { return isTaggedList(exp, "lambda"); }
 
     bool isGlobalSet(const Exp &exp) { return isTaggedList(exp, "set") && co->scopeLevel == 1; }
-    /**
-     * Blocks
-     */
+    // Blocks
     bool isBlock(const Exp &exp)
     {
         return isTaggedList(exp, "begin");
     }
 
-    /**
-     * Tagged lists
-     */
+    // Tagged lists
     bool isTaggedList(const Exp &exp, const std::string &tag)
     {
         return exp.type == ExpType::LIST && exp.list[0].type == ExpType::SYMBOL &&
                exp.list[0].string == tag;
     }
 
-    /**
-     * Number of local variables in this scope
-     */
+    // Number of local variables in this scope
     size_t getVarsCountOnScopeExit()
     {
         auto varsCount = 0;
@@ -861,15 +815,11 @@ private:
         return varsCount;
     }
 
-    /**
-     * Returns current bytecode offset.
-     */
+    // Returns current bytecode offset.
     uint16_t getOffset() { return (uint16_t)co->code.size(); }
 };
 
-/**
- * Comparison operators map
- */
+// Comparison operators map
 std::map<std::string, uint8_t> EvaCompiler::compareOps_ = {
     {"<", 0},
     {">", 1},

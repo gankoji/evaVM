@@ -1,15 +1,11 @@
-/**
- * Global object
- */
+// Global object
 
 #ifndef Global_h
 #define Global_h
 
 #include "src/vm/EvaValue.h"
 
-/**
- * Global variables
- */
+// Global variables
 struct GlobalVar
 {
     std::string name;
@@ -18,14 +14,10 @@ struct GlobalVar
 
 struct Global
 {
-    /**
-     * Returns a global value
-     */
+    // Returns a global value
     GlobalVar &get(size_t index) { return globals[index]; }
 
-    /**
-     * Set a variable by its index
-     */
+    // Set a variable by its index
     void set(size_t index, const EvaValue &value)
     {
         if (index >= globals.size())
@@ -35,9 +27,7 @@ struct Global
         globals[index].value = value;
     }
 
-    /**
-     * Get GlobalVar's index by name
-     */
+    // Get GlobalVar's index by name
     int getGlobalIndex(const std::string &name)
     {
         if (globals.size() > 0)
@@ -53,9 +43,7 @@ struct Global
         return -1;
     }
 
-    /**
-     * Registers a global var
-     */
+    // Registers a global var
     void define(const std::string &name)
     {
         auto index = getGlobalIndex(name);
@@ -70,9 +58,7 @@ struct Global
         globals.push_back({name, NUMBER(0)});
     }
 
-    /**
-     * Adds a native function
-     */
+    // Adds a native function
     void addNativeFunction(const std::string &name, std::function<void()> fn, size_t arity)
     {
         if (exists(name))
@@ -82,9 +68,7 @@ struct Global
 
         globals.push_back({name, ALLOC_NATIVE(fn, name, arity)});
     }
-    /**
-     * Adds a global constant
-     */
+    // Adds a global constant
     void addConst(const std::string &name, double value)
     {
         if (exists(name))
@@ -94,14 +78,10 @@ struct Global
         globals.push_back({name, NUMBER(value)});
     }
 
-    /**
-     * Check whether a global var exists
-     */
+    // Check whether a global var exists
     bool exists(const std::string &name) { return getGlobalIndex(name) != -1; }
 
-    /**
-     * Global variables and functions
-     */
+    // Global variables and functions
     std::vector<GlobalVar> globals;
 };
 

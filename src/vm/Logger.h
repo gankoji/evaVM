@@ -1,6 +1,4 @@
-/**
- * Logger and error reporter
- */
+// Logger and error reporter
 
 #ifndef Logger_h
 #define Logger_h

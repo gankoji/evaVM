@@ -19,9 +19,7 @@ class EvaDisassembler
 public:
     EvaDisassembler(std::shared_ptr<Global> global) : global(global) {}
 
-    /**
-     * Disassembles a code unit
-     */
+    // Disassembles a code unit
     void disassemble(CodeObject *co)
     {
         std::cout << std::endl
@@ -40,9 +38,7 @@ public:
     }
 
 private:
-    /**
-     * Global var object
-     */
+    // Global var object
     std::shared_ptr<Global> global;
 
     /**
@@ -101,9 +97,7 @@ private:
         return 0;
     }
 
-    /**
-     * Disassembles a simple instruction
-     */
+    // Disassembles a simple instruction
     size_t disassembleSimple(CodeObject *co, uint8_t opcode, size_t offset)
     {
         dumpBytes(co, offset, 1);
@@ -122,9 +116,7 @@ private:
         return offset + 2;
     }
 
-    /**
-     * Disassembles a const instruction
-     */
+    // Disassembles a const instruction
     size_t disassembleConst(CodeObject *co, uint8_t opcode, size_t offset)
     {
         dumpBytes(co, offset, 2);
@@ -135,9 +127,7 @@ private:
         return offset + 2;
     }
 
-    /**
-     * Disassemble instructions to handle global vals
-     */
+    // Disassemble instructions to handle global vals
     size_t disassembleGlobal(CodeObject *co, uint8_t opcode, size_t offset)
     {
         dumpBytes(co, offset, 2);
@@ -148,9 +138,7 @@ private:
         return offset + 2;
     }
 
-    /**
-     * Disassemble instructions to handle local vals
-     */
+    // Disassemble instructions to handle local vals
     size_t disassembleLocal(CodeObject *co, uint8_t opcode, size_t offset)
     {
         dumpBytes(co, offset, 2);
@@ -160,9 +148,7 @@ private:
         return offset + 2;
     }
 
-    /**
-     * Disassemble instructions to handle local vals
-     */
+    // Disassemble instructions to handle local vals
     size_t disassembleCell(CodeObject *co, uint8_t opcode, size_t offset)
     {
         dumpBytes(co, offset, 2);
@@ -178,9 +164,7 @@ private:
         return disassembleWord(co, opcode, offset);
     }
 
-    /**
-     * Disassembles the compare instruction
-     */
+    // Disassembles the compare instruction
     size_t disassembleCompare(CodeObject *co, uint8_t opcode, size_t offset)
     {
         dumpBytes(co, offset, 2);
@@ -191,9 +175,7 @@ private:
         return offset + 2;
     }
 
-    /**
-     * Disassembles jumps
-     */
+    // Disassembles jumps
     size_t disassembleJump(CodeObject *co, uint8_t opcode, size_t offset)
     {
         std::ios_base::fmtflags f(std::cout.flags());
@@ -210,9 +192,7 @@ private:
         return offset + 3;
     }
 
-    /**
-     * Dumps raw memory from the bytecode
-     */
+    // Dumps raw memory from the bytecode
     void dumpBytes(CodeObject *co, size_t offset, size_t count)
     {
         std::ios_base::fmtflags f(std::cout.flags());
@@ -227,9 +207,7 @@ private:
         std::cout.flags(f);
     }
 
-    /**
-     * Prints a single opcode
-     */
+    // Prints a single opcode
     void printOpCode(uint8_t opcode)
     {
         std::ios_base::fmtflags f(std::cout.flags());
@@ -238,9 +216,7 @@ private:
         std::cout.flags(f);
     }
 
-    /**
-     * Reads a (two byte) word at given offset
-     */
+    // Reads a (two byte) word at given offset
     uint16_t readWordAtOffset(CodeObject *co, size_t offset)
     {
         return (uint16_t)((co->code[offset] << 8) | co->code[offset + 1]);

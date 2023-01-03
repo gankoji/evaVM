@@ -1,6 +1,4 @@
-/**
- * Eva Value Types
- */
+// Eva Value Types
 
 #ifndef EvaValue_h
 #define EvaValue_h
@@ -9,9 +7,7 @@
 #include <list>
 #include "src/vm/Logger.h"
 
-/**
- * Eva value type
- */
+// Eva value type
 enum class EvaValueType
 {
     NUMBER,
@@ -19,9 +15,7 @@ enum class EvaValueType
     OBJECT,
 };
 
-/**
- * Object type
- */
+// Object type
 enum class ObjectType
 {
     STRING,
@@ -88,18 +82,14 @@ struct Object : public Traceable
     ObjectType type;
 };
 
-/**
- * String object
- */
+// String object
 struct StringObject : public Object
 {
     StringObject(const std::string &str) : Object(ObjectType::STRING), string(str) {}
     std::string string;
 };
 
-/**
- * Native functions
- */
+// Native functions
 using NativeFn = std::function<void()>;
 
 struct NativeObject : public Object
@@ -114,9 +104,7 @@ struct NativeObject : public Object
     size_t arity;
 };
 
-/**
- * Eva value (tagged union)
- */
+// Eva value (tagged union)
 struct EvaValue
 {
     EvaValueType type;
@@ -134,9 +122,7 @@ struct LocalVar
     size_t scopeLevel;
 };
 
-/**
- * Code object
- */
+// Code object
 struct CodeObject : public Object
 {
     CodeObject(const std::string &name, size_t arity) : Object(ObjectType::CODE), name(name), arity(arity) {}
@@ -202,9 +188,7 @@ struct CellObject : public Object
     EvaValue value;
 };
 
-/**
- * Function object
- */
+// Function object
 struct FunctionObject : public Object
 {
     FunctionObject(CodeObject *co) : Object(ObjectType::FUNCTION), co(co) {}
@@ -215,15 +199,11 @@ struct FunctionObject : public Object
      */
     CodeObject *co;
 
-    /**
-     * Captured cells (for closures).
-     */
+    // Captured cells (for closures).
     std::vector<CellObject *> cells;
 };
 
-/**
- * Constructors
- */
+// Constructors
 #define NUMBER(value) ((EvaValue){.type = EvaValueType::NUMBER, .number = value})
 #define BOOLEAN(value) ((EvaValue){.type = EvaValueType::BOOLEAN, .boolean = value})
 #define OBJECT(value) ((EvaValue){.type = EvaValueType::OBJECT, .object = value})
@@ -241,9 +221,7 @@ struct FunctionObject : public Object
 #define ALLOC_CELL(evaValue)                  \
     ((EvaValue){.type = EvaValueType::OBJECT, \
                 .object = (Object *)new CellObject(evaValue)})
-/**
- * Accessors
- */
+// Accessors
 #define AS_NUMBER(evaValue) ((double)(evaValue).number)
 #define AS_BOOLEAN(evaValue) ((bool)(evaValue).boolean)
 #define AS_OBJECT(evaValue) ((Object *)(evaValue).object)
@@ -254,9 +232,7 @@ struct FunctionObject : public Object
 #define AS_FUNCTION(evaValue) ((FunctionObject *)(evaValue).object)
 #define AS_CELL(evaValue) ((CellObject *)(evaValue).object)
 
-/**
- * Predicates
- */
+// Predicates
 #define IS_NUMBER(evaValue) ((evaValue).type == EvaValueType::NUMBER)
 #define IS_BOOLEAN(evaValue) ((evaValue).type == EvaValueType::BOOLEAN)
 #define IS_OBJECT(evaValue) ((evaValue).type == EvaValueType::OBJECT)
@@ -268,9 +244,7 @@ struct FunctionObject : public Object
 #define IS_FUNCTION(evaValue) IS_OBJECT_TYPE(evaValue, ObjectType::FUNCTION)
 #define IS_CELL(evaValue) IS_OBJECT_TYPE(evaValue, ObjectType::CELL)
 
-/**
- * Output stream
- */
+// Output stream
 std::string evaValueToTypeString(const EvaValue &evaValue)
 {
     if (IS_NUMBER(evaValue))

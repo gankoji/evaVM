@@ -1,64 +1,44 @@
-/**
- * Instruction set for Eva VM.
- */
+// Instruction set for Eva VM.
 
 #ifndef OpCode_h
 #define OpCode_h
 
 #include "src/vm/Logger.h"
 
-/**
- * Stops the program
- */
+// Stops the program
 #define OP_HALT 0x00
 
-/**
- * Pushes a constant onto the stack
- */
+// Pushes a constant onto the stack
 #define OP_CONST 0x01
 
-/**
- * Math instructions
- */
+// Math instructions
 #define OP_ADD 0x02
 #define OP_SUB 0x03
 #define OP_MUL 0x04
 #define OP_DIV 0x05
 
-/**
- * Comparison
- */
+// Comparison
 #define OP_COMPARE 0x06
 
-/**
- * Control flow
- */
+// Control flow
 #define OP_JMP_IF_FALSE 0x07
 #define OP_JMP 0x08
 
-/**
- * Global vars
- */
+// Global vars
 #define OP_GET_GLOBAL 0x09
 #define OP_SET_GLOBAL 0x0A
 
-/**
- * Local vars
- */
+// Local vars
 #define OP_POP 0x0B
 #define OP_GET_LOCAL 0x0C
 #define OP_SET_LOCAL 0x0D
 #define OP_SCOPE_EXIT 0x0E
 
-/**
- * Function calls
- */
+// Function calls
 #define OP_CALL 0x0F
 #define OP_RETURN 0x10
 
-/**
- * Closures
- */
+// Closures
 #define OP_GET_CELL 0x11
 #define OP_SET_CELL 0x12
 #define OP_LOAD_CELL 0x13

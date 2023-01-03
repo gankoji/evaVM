@@ -1,6 +1,4 @@
-/**
- * Eva Bytecode Interpreter
- */
+// Eva Bytecode Interpreter
 
 #ifndef EvaVM_h
 #define EvaVM_h
@@ -25,14 +23,10 @@
  */
 #define READ_BYTE() *ip++
 
-/**
- * Reads a short word (2 bytes) from bytecode
- */
+// Reads a short word (2 bytes) from bytecode
 #define READ_SHORT() (ip += 2, (uint16_t)((ip[-2] << 8) | ip[-1]))
 
-/**
- * Converts bytecode index to a pointer
- */
+// Converts bytecode index to a pointer
 #define TO_ADDRESS(index) &fn->co->code[index]
 
 /**
@@ -41,9 +35,7 @@
  */
 #define GET_CONST() fn->co->constants[READ_BYTE()]
 
-/**
- * Binary operation
- */
+// Binary operation
 #define BINARY_OP(op)                \
     do                               \
     {                                \
@@ -89,9 +81,7 @@
         push(BOOLEAN(res));                                            \
     } while (false)
 
-/**
- * Stack frame for function calls.
- */
+// Stack frame for function calls.
 struct Frame
 {
     uint8_t *ra;        // Return address
@@ -99,9 +89,7 @@ struct Frame
     FunctionObject *fn; // Currently running function/code object/block
 };
 
-/**
- * Eva Virtual Machine.
- */
+// Eva Virtual Machine.
 class EvaVM
 {
 public:
@@ -118,9 +106,7 @@ public:
         Traceable::cleanup();
     }
 
-    /**
-     * Pushes a value onto the stack
-     */
+    // Pushes a value onto the stack
     void push(const EvaValue &value)
     {
         if ((size_t)(sp - stack.begin()) == STACK_LIMIT)
@@ -131,9 +117,7 @@ public:
         sp++;
     }
 
-    /**
-     * Pops a value from the stack
-     */
+    // Pops a value from the stack
     EvaValue pop()
     {
         if (sp == stack.begin() || stack.size() == 0)
@@ -149,9 +133,7 @@ public:
         return result;
     }
 
-    /**
-     * Pops N values from the stack
-     */
+    // Pops N values from the stack
     void popN(size_t count)
     {
         if (stack.size() == 0)
@@ -165,9 +147,7 @@ public:
         sp -= count;
     }
 
-    /**
-     * Get value from stack without popping
-     */
+    // Get value from stack without popping
     EvaValue peek(const size_t offset = 0)
     {
         if (stack.size() == 0 || sp == stack.begin())
@@ -177,9 +157,7 @@ public:
         return *(sp - 1 - offset);
     }
 
-    /**
-     * Executes a program
-     */
+    // Executes a program
     EvaValue exec(const std::string &program)
     {
         // 1. Parse the program
@@ -201,9 +179,7 @@ public:
         return eval();
     }
 
-    /**
-     * Main eval loop
-     */
+    // Main eval loop
     EvaValue eval()
     {
         for (;;)
@@ -447,9 +423,7 @@ public:
         }
     }
 
-    /**
-     * Sets up global variables and functions
-     */
+    // Sets up global variables and functions
     void setGlobalVariables()
     {
         // Native square function
@@ -476,57 +450,37 @@ public:
         global->addConst("y", 20);
     }
 
-    /**
-     * Global vars object
-     */
+    // Global vars object
     std::shared_ptr<Global> global;
 
-    /**
-     * Parser
-     */
+    // Parser
     std::unique_ptr<syntax::EvaParser> parser;
 
-    /**
-     * Compiler
-     */
+    // Compiler
     std::unique_ptr<EvaCompiler> compiler;
 
-    /**
-     * Instruction pointer (aka Program counter)
-     */
+    // Instruction pointer (aka Program counter)
     uint8_t *ip;
 
-    /**
-     * Stack pointer
-     */
+    // Stack pointer
     EvaValue *sp;
 
-    /**
-     * Base (stack frame) pointer
-     */
+    // Base (stack frame) pointer
     EvaValue *bp;
 
-    /**
-     * Operands stack.
-     */
+    // Operands stack.
     std::array<EvaValue, STACK_LIMIT> stack;
 
-    /**
-     * Call stack
-     */
+    // Call stack
     std::stack<Frame> callStack;
 
-    /**
-     * Code object
-     */
+    // Code object
     FunctionObject *fn;
 
     //--------------------------------------
     // Debug functions
 
-    /**
-     * Dumps the current stack
-     */
+    // Dumps the current stack
     void dumpStack()
     {
         std::cout << "\n------- Stack --------\n";

@@ -53,9 +53,7 @@
 #include <string>
 #include <vector>
 
-/**
- * Expression type
- */
+// Expression type
 enum class ExpType {
     NUMBER,
     STRING,
@@ -63,9 +61,7 @@ enum class ExpType {
     LIST,
 };
 
-/**
- * Expression
- */
+// Expression
 struct Exp {
     ExpType type;
 
@@ -116,9 +112,7 @@ using Value = Exp;  // clang-format on
 
 namespace syntax {
 
-/**
- * Tokenizer class.
- */
+// Tokenizer class.
 // clang-format off
 /**
  * Generic tokenizer used by the parser in the Syntax tool.
@@ -187,9 +181,7 @@ enum TokenizerState {
 
 class Tokenizer {
  public:
-  /**
-   * Initializes a parsing string.
-   */
+  // Initializes a parsing string.
   void initString(const std::string& str) {
     str_ = str;
 
@@ -210,19 +202,13 @@ class Tokenizer {
     tokenEndColumn_ = 0;
   }
 
-  /**
-   * Whether there are still tokens in the stream.
-   */
+  // Whether there are still tokens in the stream.
   inline bool hasMoreTokens() { return cursor_ <= str_.length(); }
 
-  /**
-   * Returns current tokenizing state.
-   */
+  // Returns current tokenizing state.
   TokenizerState getCurrentState() { return states_.back(); }
 
-  /**
-   * Enters a new state pushing it on the states stack.
-   */
+  // Enters a new state pushing it on the states stack.
   void pushState(TokenizerState state) { states_.push_back(state); }
 
   /**
@@ -230,18 +216,14 @@ class Tokenizer {
    */
   void begin(TokenizerState state) { states_.push_back(state); }
 
-  /**
-   * Exits a current state popping it from the states stack.
-   */
+  // Exits a current state popping it from the states stack.
   TokenizerState popState() {
     auto state = states_.back();
     states_.pop_back();
     return state;
   }
 
-  /**
-   * Returns next token.
-   */
+  // Returns next token.
   SharedToken getNextToken() {
     if (!hasMoreTokens()) {
       yytext = __EOF;
@@ -288,9 +270,7 @@ class Tokenizer {
                          currentColumn_);
   }
 
-  /**
-   * Whether the cursor is at the EOF.
-   */
+  // Whether the cursor is at the EOF.
   inline bool isEOF() { return cursor_ == str_.length(); }
 
   SharedToken toToken(TokenType tokenType) {
@@ -334,15 +314,11 @@ class Tokenizer {
     throw new std::runtime_error(errMsg.str().c_str());
   }
 
-  /**
-   * Matched text.
-   */
+  // Matched text.
   std::string yytext;
 
  private:
-  /**
-   * Captures token locations.
-   */
+  // Captures token locations.
   void captureLocations_(const std::string& matched) {
     auto len = matched.length();
 
@@ -371,33 +347,23 @@ class Tokenizer {
     currentColumn_ = tokenEndColumn_;
   }
 
-  /**
-   * Lexical rules.
-   */
+  // Lexical rules.
   // clang-format off
   static constexpr size_t LEX_RULES_COUNT = 8;
   static std::array<LexRule, LEX_RULES_COUNT> lexRules_;
   static std::map<TokenizerState, std::vector<size_t>> lexRulesByStartConditions_;
   // clang-format on
 
-  /**
-   * Special EOF token.
-   */
+  // Special EOF token.
   static std::string __EOF;
 
-  /**
-   * Tokenizing string.
-   */
+  // Tokenizing string.
   std::string str_;
 
-  /**
-   * Cursor for current symbol.
-   */
+  // Cursor for current symbol.
   int cursor_;
 
-  /**
-   * States.
-   */
+  // States.
   std::vector<TokenizerState> states_;
 
   /**
@@ -407,9 +373,7 @@ class Tokenizer {
   int currentColumn_;
   int currentLineBeginOffset_;
 
-  /**
-   * Location data of a matched token.
-   */
+  // Location data of a matched token.
   int tokenStartOffset_;
   int tokenEndOffset_;
   int tokenStartLine_;
@@ -488,9 +452,7 @@ std::map<TokenizerState, std::vector<size_t>> Tokenizer::lexRulesByStartConditio
 #define PUSH_VR() parser.valuesStack.push_back(__)
 #define PUSH_TR() parser.tokensStack.push_back(__)
 
-/**
- * Parsing table type.
- */
+// Parsing table type.
 enum class TE {
   Accept,
   Shift,
@@ -498,9 +460,7 @@ enum class TE {
   Transit,
 };
 
-/**
- * Parsing table entry.
- */
+// Parsing table entry.
 struct TableEntry {
   TE type;
   int value;
@@ -530,41 +490,27 @@ struct Production {
 // Value: TableEntry
 using Row = std::map<int, TableEntry>;
 
-/**
- * Parser class.
- */
+// Parser class.
 // clang-format off
 class EvaParser {
   // clang-format on
  public:
-  /**
-   * Parsing values stack.
-   */
+  // Parsing values stack.
   std::vector<Value> valuesStack;
 
-  /**
-   * Token values stack.
-   */
+  // Token values stack.
   std::vector<std::string> tokensStack;
 
-  /**
-   * Parsing states stack.
-   */
+  // Parsing states stack.
   std::vector<int> statesStack;
 
-  /**
-   * Tokenizer.
-   */
+  // Tokenizer.
   Tokenizer tokenizer;
 
-  /**
-   * Previous state to calculate the next one.
-   */
+  // Previous state to calculate the next one.
   int previousState;
 
-  /**
-   * Parses a string.
-   */
+  // Parses a string.
   Value parse(const std::string& str) {
     // clang-format off
     
@@ -659,9 +605,7 @@ class EvaParser {
   }
 
  private:
-  /**
-   * Throws parser error on unexpected token.
-   */
+  // Throws parser error on unexpected token.
   [[noreturn]] void throwUnexpectedToken(SharedToken token) {
     if (token->type == TokenType::__EOF && !tokenizer.hasMoreTokens()) {
       std::string errMsg = "Unexpected end of input.\n";
