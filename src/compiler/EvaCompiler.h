@@ -550,6 +550,9 @@ public:
     // Get the compiled (main) function object
     FunctionObject *getMainFunction() { return main; }
 
+    // Get all GC Roots
+    std::set<Traceable *> &getConstantObjects() { return constantObjects_; }
+
 private:
     // Disassembler
     std::unique_ptr<EvaDisassembler> disassembler;
@@ -702,6 +705,7 @@ private:
     size_t stringConstIdx(const std::string &value)
     {
         ALLOC_CONST(IS_STRING, AS_CPPSTRING, ALLOC_STRING, value);
+        constantObjects_.insert((Traceable *)co->constants.back().object);
         return co->constants.size() - 1;
     }
 
@@ -735,9 +739,6 @@ private:
         constantObjects_.insert((Traceable *)co);
         return coValue;
     }
-
-    // Get all GC Roots
-    std::set<Traceable *> &getConstantObjects() { return constantObjects_; }
 
     // Enter a new block. Increase the scope level
     void blockEnter() { co->scopeLevel++; }

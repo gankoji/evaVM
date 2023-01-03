@@ -9,13 +9,15 @@
 #include <memory>
 
 #include "src/bytecode/OpCode.h"
-#include "src/vm/Logger.h"
+#include "src/compiler/EvaCompiler.h"
+#include "src/gc/EvaCollector.h"
+#include "src/parser/EvaParser.h"
 #include "src/vm/EvaValue.h"
 #include "src/vm/Global.h"
-#include "src/parser/EvaParser.h"
-#include "src/compiler/EvaCompiler.h"
+#include "src/vm/Logger.h"
 
 #define STACK_LIMIT 512
+#define GC_THRESHOLD 1024
 
 // Reads the current byte in the bytecode
 // and advances the instruction pointer
@@ -75,6 +77,9 @@
         push(BOOLEAN(res));                                            \
     } while (false)
 
+// Runtime allocation of memory, can call GC
+#define MEM(allocator, ...) (maybeGC(), allocator(__VA_ARGS__))
+
 // Stack frame for function calls.
 struct Frame
 {
@@ -90,7 +95,8 @@ public:
     EvaVM()
         : global(std::make_shared<Global>()),
           parser(std::make_unique<syntax::EvaParser>()),
-          compiler(std::make_unique<EvaCompiler>(global))
+          compiler(std::make_unique<EvaCompiler>(global)),
+          collector(std::make_unique<EvaCollector>())
     {
         setGlobalVariables();
     }
@@ -149,6 +155,76 @@ public:
             DIE << "peek(): empty stack." << std::endl;
         }
         return *(sp - 1 - offset);
+    }
+
+    // GC Operations
+    void maybeGC()
+    {
+        if (Traceable::bytesAllocated < GC_THRESHOLD)
+            return;
+
+        auto roots = getGCRoots();
+        if (roots.size() == 0)
+            return;
+
+        std::cout << "Before GC Stats" << std::endl;
+        Traceable::printStats();
+        collector->gc(roots);
+        std::cout << "After GC Stats" << std::endl;
+        Traceable::printStats();
+    }
+
+    // Roots are references that live the same length as the VM
+    std::set<Traceable *> getGCRoots()
+    {
+        // Stack
+        auto roots = getStackGCRoots();
+
+        // Constant pool
+        auto constantRoots = getConstantGCRoots();
+        roots.insert(constantRoots.begin(), constantRoots.end());
+
+        // Global poolt
+        auto globalRoots = getGlobalGCRoots();
+        roots.insert(globalRoots.begin(), globalRoots.end());
+
+        return roots;
+    }
+
+    // Stack roots
+    std::set<Traceable *> getStackGCRoots()
+    {
+        std::set<Traceable *> roots;
+        auto stackEntry = sp;
+        while (stackEntry-- != stack.begin())
+        {
+            if (IS_OBJECT(*stackEntry))
+            {
+                roots.insert((Traceable *)stackEntry->object);
+            }
+        }
+        return roots;
+    }
+
+    // Get constants
+    std::set<Traceable *> getConstantGCRoots()
+    {
+        return compiler->getConstantObjects();
+    }
+
+    // Global roots
+    std::set<Traceable *> getGlobalGCRoots()
+    {
+        std::set<Traceable *> roots;
+        for (const auto &global : global->globals)
+        {
+            if (IS_OBJECT(global.value))
+            {
+                roots.insert((Traceable *)global.value.object);
+            }
+        }
+
+        return roots;
     }
 
     // Executes a program
@@ -210,7 +286,7 @@ public:
                 {
                     auto s1 = AS_CPPSTRING(op1);
                     auto s2 = AS_CPPSTRING(op2);
-                    push(ALLOC_STRING(s1 + s2));
+                    push(MEM(ALLOC_STRING, s1 + s2));
                 }
 
                 break;
@@ -379,7 +455,7 @@ public:
                 if (fn->cells.size() <= cellIndex)
                 {
                     // Allocate the cell if it doesn't yet exist
-                    fn->cells.push_back(AS_CELL(ALLOC_CELL(value)));
+                    fn->cells.push_back(AS_CELL(MEM(ALLOC_CELL, value)));
                 }
                 else
                 {
@@ -399,7 +475,7 @@ public:
                 auto co = AS_CODE(pop());
                 auto cellsCount = READ_BYTE();
 
-                auto fnValue = ALLOC_FUNCTION(co);
+                auto fnValue = MEM(ALLOC_FUNCTION, co);
                 auto fn = AS_FUNCTION(fnValue);
 
                 for (auto i = 0; i < cellsCount; i++)
@@ -452,6 +528,9 @@ public:
 
     // Compiler
     std::unique_ptr<EvaCompiler> compiler;
+
+    // Garbage collector
+    std::unique_ptr<EvaCollector> collector;
 
     // Instruction pointer (aka Program counter)
     uint8_t *ip;

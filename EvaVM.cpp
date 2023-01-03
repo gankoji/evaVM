@@ -18,8 +18,16 @@ int main(int argc, char const *argv[])
         // 3. Mark-Sweep GC algorithm
         (+ "hello" ", world") // leaking "hello, world" string
         (+ "hello" ", world")
-
-
+        (+ "hello" ", world")
+        (+ "hello" ", world")
+        (+ "hello" ", world")
+        (+ "hello" ", world")
+        (+ "hello" ", world")
+        (+ "hello" ", world")
+        (+ "hello" ", world")
+        (+ "hello" ", world")
+        (+ "hello" ", world")
+        (+ "hello" ", world")
         )");
 
         log(result);
