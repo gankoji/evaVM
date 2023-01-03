@@ -127,6 +127,7 @@ struct Scope
             return OP_GET_CELL;
         default:
             DIE << "[Scope] Invalid allocType for var " << name << ". Cannot proceed." << std::endl;
+	    return OP_GET_GLOBAL;
         }
     }
 
@@ -143,6 +144,7 @@ struct Scope
             return OP_SET_CELL;
         default:
             DIE << "[Scope] Invalid allocType for var " << name << ". Cannot proceed with emitting a set opcode." << std::endl;
+	    return OP_SET_GLOBAL;
         }
     }
 
