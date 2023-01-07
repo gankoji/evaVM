@@ -646,6 +646,21 @@ public:
                     emit(OP_GET_PROP);
                     emit(stringConstIdx(exp.list[2].string));
                 }
+                // Super (parent) class operator
+                else if (op == "super")
+                {
+                    auto className = exp.list[1].string;
+                    auto cls = getClassByName(className);
+
+                    if (cls == nullptr)
+                        DIE << "[EvaCompiler]: Unknown class " << className;
+
+                    if (cls->superClass == nullptr)
+                        DIE << "[EvaCompiler]: Class " << className << " doesn't have a super class.";
+
+                    emit(OP_GET_GLOBAL);
+                    emit(global->getGlobalIndex(cls->superClass->name));
+                }
                 // Named function calls
                 else
                 {
