@@ -14,11 +14,13 @@ int main(int argc, char const *argv[])
             (class Point null
                 (def constructor (self x y)
                     (begin
-                        (set (prop self x) x)
-                        (set (prop self y) y)
+                        // (set (prop self x) x)
+                        // (set (prop self y) y)
                         self))
                 (def calc (self)
-                    (+ (prop self x) (prop self y))))
+                    1))
+                    // (+ (prop self x) (prop self y))))
+            Point
         )");
         log(result);
 

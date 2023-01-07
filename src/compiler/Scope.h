@@ -14,6 +14,7 @@ enum class ScopeType
     GLOBAL,
     FUNCTION,
     BLOCK,
+    CLASS,
 };
 
 // Allocation type

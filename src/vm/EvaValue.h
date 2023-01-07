@@ -22,6 +22,7 @@ enum class ObjectType
     NATIVE,
     FUNCTION,
     CELL,
+    CLASS,
 };
 
 // Base traceable object
@@ -46,7 +47,7 @@ struct Traceable
     static void operator delete(void *object, std::size_t sz)
     {
         Traceable::bytesAllocated -= ((Traceable *)object)->size;
-        ::operator delete(object, sz);
+        ::operator delete(object);
         // Note: remove from Traceable::objects during GC cycle.
     }
 
@@ -176,6 +177,36 @@ struct CodeObject : public Object
     }
 };
 
+// Class object
+struct ClassObject : public Object
+{
+    ClassObject(const std::string &name, ClassObject *superClass)
+        : Object(ObjectType::CLASS),
+          name(name),
+          properties{},
+          superClass(superClass) {}
+
+    std::string name;
+    std::map<std::string, EvaValue> properties;
+    ClassObject *superClass;
+
+    EvaValue getProp(const std::string &prop)
+    {
+        if (properties.count(prop) != 0)
+            return properties[prop];
+
+        if (superClass == nullptr)
+            DIE << "Unresolved property " << prop << " in class " << name;
+
+        return superClass->getProp(prop);
+    }
+
+    void setProp(const std::string &prop, const EvaValue &value)
+    {
+        properties[prop] = value;
+    }
+};
+
 // Heap-allocated cell.
 // Used to capture closure variables
 struct CellObject : public Object
@@ -202,6 +233,8 @@ struct FunctionObject : public Object
 #define BOOLEAN(value) ((EvaValue){.type = EvaValueType::BOOLEAN, .boolean = value})
 #define OBJECT(value) ((EvaValue){.type = EvaValueType::OBJECT, .object = value})
 #define CELL(cellObject) OBJECT((Object *)cellObject)
+#define CLASS(classObject) OBJECT((Object *)classObject)
+
 #define ALLOC_STRING(value) \
     ((EvaValue){.type = EvaValueType::OBJECT, .object = (Object *)new StringObject(value)})
 #define ALLOC_CODE(name, arity) \
@@ -215,6 +248,10 @@ struct FunctionObject : public Object
 #define ALLOC_CELL(evaValue)                  \
     ((EvaValue){.type = EvaValueType::OBJECT, \
                 .object = (Object *)new CellObject(evaValue)})
+#define ALLOC_CLASS(name, superClass)         \
+    ((EvaValue){.type = EvaValueType::OBJECT, \
+                .object = (Object *)new ClassObject(name, superClass)})
+
 // Accessors
 #define AS_NUMBER(evaValue) ((double)(evaValue).number)
 #define AS_BOOLEAN(evaValue) ((bool)(evaValue).boolean)
@@ -225,6 +262,7 @@ struct FunctionObject : public Object
 #define AS_NATIVE(evaValue) ((NativeObject *)(evaValue).object)
 #define AS_FUNCTION(evaValue) ((FunctionObject *)(evaValue).object)
 #define AS_CELL(evaValue) ((CellObject *)(evaValue).object)
+#define AS_CLASS(evaValue) ((ClassObject *)(evaValue).object)
 
 // Predicates
 #define IS_NUMBER(evaValue) ((evaValue).type == EvaValueType::NUMBER)
@@ -237,6 +275,7 @@ struct FunctionObject : public Object
 #define IS_NATIVE(evaValue) IS_OBJECT_TYPE(evaValue, ObjectType::NATIVE)
 #define IS_FUNCTION(evaValue) IS_OBJECT_TYPE(evaValue, ObjectType::FUNCTION)
 #define IS_CELL(evaValue) IS_OBJECT_TYPE(evaValue, ObjectType::CELL)
+#define IS_CLASS(evaValue) IS_OBJECT_TYPE(evaValue, ObjectType::CLASS)
 
 // Output stream
 std::string evaValueToTypeString(const EvaValue &evaValue)
@@ -268,6 +307,10 @@ std::string evaValueToTypeString(const EvaValue &evaValue)
     else if (IS_CELL(evaValue))
     {
         return "CELL";
+    }
+    else if (IS_CLASS(evaValue))
+    {
+        return "CLASS";
     }
     else
     {
@@ -310,6 +353,11 @@ std::string evaValueToConstantString(const EvaValue &evaValue)
     {
         auto cell = AS_CELL(evaValue);
         ss << "cell: " << evaValueToConstantString(cell->value);
+    }
+    else if (IS_CLASS(evaValue))
+    {
+        auto cls = AS_CLASS(evaValue);
+        ss << "class: " << cls->name;
     }
     else
     {

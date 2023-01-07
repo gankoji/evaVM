@@ -66,15 +66,15 @@ TEST(Functions, UserDefFunc2)
 
 // The scope analyzer breaks this, unsurprisingly.
 // TEST(Functions, Lambdas)
-//{
-//    EvaVM vm;
+// {
+//     EvaVM vm;
 //
-//    auto result = vm.exec(R"(
-//        ((lambda (x) (* x x)) 2) // IILE
-//    )");
-//    log(result);
-//    EXPECT_EQ(result.number, 4);
-//}
+//     auto result = vm.exec(R"(
+//         ((lambda (x) (* x x)) 2) // IILE
+//     )");
+//     log(result);
+//     EXPECT_EQ(result.number, 4);
+// }
 
 TEST(Functions, LambdaToVar)
 {

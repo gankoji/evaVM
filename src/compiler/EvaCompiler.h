@@ -86,7 +86,7 @@ public:
     {
         if (exp.type == ExpType::SYMBOL)
         {
-            if (exp.string == "true" || exp.string == "false")
+            if (exp.string == "true" || exp.string == "false" || exp.string == "null")
             {
                 // Do nothing
             }
@@ -160,6 +160,20 @@ public:
 
                     // Body
                     analyze(exp.list[2], newScope);
+                }
+                // Class declaration
+                else if (op == "class")
+                {
+                    auto className = exp.list[1].string;
+
+                    auto newScope = std::make_shared<Scope>(ScopeType::CLASS, scope);
+                    scopeInfo_[&exp] = newScope;
+
+                    scope->addLocal(className);
+
+                    // Class body
+                    for (auto i = 3; i < exp.list.size(); i++)
+                        analyze(exp.list[i], newScope);
                 }
                 else
                 {
@@ -477,7 +491,7 @@ public:
                         // Generate the code for this expression
                         gen(exp.list[i]);
 
-                        if (!isLast && !isDecl && !isGlobalSet(exp.list[i]))
+                        if (!isLast && !isDecl)
                         {
                             emit(OP_POP);
                         }
@@ -500,17 +514,23 @@ public:
                         /* body */ exp.list[3]);
 
                     // Install the function as a variable
-                    if (isGlobalScope())
+                    if (classObject_ == nullptr)
                     {
-                        global->define(fnName);
-                        emit(OP_SET_GLOBAL);
-                        emit(global->getGlobalIndex(fnName));
+                        if (isGlobalScope())
+                        {
+                            global->define(fnName);
+                            emit(OP_SET_GLOBAL);
+                            emit(global->getGlobalIndex(fnName));
+                        }
+                        else
+                        {
+                            co->addLocal(fnName);
+                            emit(OP_SET_LOCAL);
+                            emit(co->getLocalIndex(fnName));
+                        }
                     }
                     else
                     {
-                        co->addLocal(fnName);
-                        emit(OP_SET_LOCAL);
-                        emit(co->getLocalIndex(fnName));
                     }
                 }
                 // Lambda expressions (lambda <params> <body)
@@ -535,6 +555,36 @@ public:
                     auto classObject = AS_CLASS(cls);
 
                     classObjects_.push_back(classObject);
+
+                    // Track the class for GC
+                    constantObjects_.insert((Traceable *)classObject);
+
+                    // Put the class on our constants pool
+                    co->addConstant(cls);
+                    // emit(OP_CONST);
+                    // emit(co->constants.size() - 1);
+
+                    // Set as a global
+                    global->define(name);
+                    // And pre-install to the global:
+                    global->set(global->getGlobalIndex(name), cls);
+                    // emit(OP_SET_GLOBAL);
+                    // emit(global->getGlobalIndex(name));
+
+                    // To compile the class body we set the current compiling
+                    // class, so the defined methods are stored on the class.
+                    if (exp.list.size() > 3)
+                    {
+                        auto prevClassObject = classObject_;
+                        classObject_ = classObject;
+
+                        // Body:
+                        scopeStack_.push(scopeInfo_.at(&exp));
+                        for (auto i = 3; i < exp.list.size(); i++)
+                            gen(exp.list[i]);
+                        scopeStack_.pop();
+                        classObject_ = prevClassObject;
+                    }
                 }
                 // Named function calls
                 else
@@ -592,6 +642,12 @@ private:
     // GC Roots (things that should live as long as the VM)
     std::set<Traceable *> constantObjects_;
 
+    // All class objects
+    std::vector<ClassObject *> classObjects_;
+
+    // Currently compiling class object
+    ClassObject *classObject_;
+
     // Comparison operators map
     static std::map<std::string, uint8_t> compareOps_;
 
@@ -610,7 +666,10 @@ private:
         auto prevCo = co;
 
         // Function code object:
-        auto coValue = createCodeObjectValue(fnName, arity);
+        auto coValue = createCodeObjectValue(
+            classObject_ != nullptr ? (classObject_->name + "." + fnName) : fnName,
+            arity);
+
         co = AS_CODE(coValue);
 
         // Put 'free' and 'cells' from the scope into the
@@ -647,7 +706,10 @@ private:
         }
 
         // Compile body in the new code object
+        auto prevClassObject = classObject_;
+        classObject_ = nullptr;
         gen(body);
+        classObject_ = prevClassObject;
 
         if (!isBlock(body))
         {
@@ -657,6 +719,20 @@ private:
 
         // Explicit return to restore caller address
         emit(OP_RETURN);
+
+        // Class methods are stored directly in the class.
+        if (classObject_ != nullptr)
+        {
+            // Create the function
+            auto fn = ALLOC_FUNCTION(co);
+            constantObjects_.insert((Traceable *)AS_OBJECT(fn));
+
+            // Restore the code object
+            co = prevCo;
+
+            // Add method to the class object
+            classObject_->properties[fnName] = fn;
+        }
 
         // 1. Simple functions (allocated at compile time):
         // If it's not a closure (i.e. this function doesn't
@@ -744,6 +820,17 @@ private:
         writeByteAtOffset(offset + 1, value & 0xFF);
     }
 
+    // Returns a class object by name.
+    ClassObject *getClassByName(const std::string name)
+    {
+        for (const auto &classObject : classObjects_)
+        {
+            if (classObject->name == name)
+                return classObject;
+        }
+        return nullptr;
+    }
+
     // Creates a new code object.
     EvaValue createCodeObjectValue(const std::string &name, size_t arity = 0)
     {
@@ -787,15 +874,23 @@ private:
     bool isFunctionBody() { return co->name != "main" && co->scopeLevel == 1; }
 
     // Check if expression is a declaration
-    bool isDeclaration(const Exp &exp) { return isVarDeclaration(exp); }
+    bool isDeclaration(const Exp &exp)
+    {
+        return isVarDeclaration(exp) || isFunctionDeclaration(exp) || isClassDeclaration(exp);
+    }
 
     // (var <name> <value>)
     bool isVarDeclaration(const Exp &exp) { return isTaggedList(exp, "var"); }
 
+    // (def <name> <params> <body>)
+    bool isFunctionDeclaration(const Exp &exp) { return isTaggedList(exp, "def"); }
+
+    // (class <name> <super> <body>)
+    bool isClassDeclaration(const Exp &exp) { return isTaggedList(exp, "class"); }
+
     // Check if Exp is a lambda (lambda ...)
     bool isLambda(const Exp &exp) { return isTaggedList(exp, "lambda"); }
 
-    bool isGlobalSet(const Exp &exp) { return isTaggedList(exp, "set") && co->scopeLevel == 1; }
     // Blocks
     bool isBlock(const Exp &exp)
     {
