@@ -9,24 +9,21 @@ int main(int argc, char const *argv[])
     {
         EvaVM vm;
 
-        Traceable::printStats();
         auto result = vm.exec(R"(
             (class Point null
                 (def constructor (self x y)
                     (begin
-                        // (set (prop self x) x)
-                        // (set (prop self y) y)
-                        self))
+                        (set (prop self x) x)
+                        (set (prop self y) y)
+                        ))
                 (def calc (self)
-                    1))
-                    // (+ (prop self x) (prop self y))))
-            Point
+                    (+ (prop self x) (prop self y))))
+                    
+            (var p (new Point 10 20))
+            ((prop p calc) p) // 30
         )");
         log(result);
-
-        Traceable::printStats();
     }
 
-    Traceable::printStats();
     return 0;
 }

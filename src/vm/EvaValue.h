@@ -23,6 +23,7 @@ enum class ObjectType
     FUNCTION,
     CELL,
     CLASS,
+    INSTANCE,
 };
 
 // Base traceable object
@@ -136,6 +137,11 @@ struct CodeObject : public Object
     std::vector<std::string> cellNames;
     size_t freeCount = 0;
 
+    void insertAtOffset(int offset, uint8_t byte)
+    {
+        code.insert((offset < 0 ? code.end() : code.begin()) + offset, byte);
+    }
+
     void addLocal(const std::string &name)
     {
         locals.push_back({name, scopeLevel});
@@ -207,6 +213,25 @@ struct ClassObject : public Object
     }
 };
 
+// Instances of classes
+struct InstanceObject : public Object
+{
+    InstanceObject(ClassObject *cls)
+        : Object(ObjectType::INSTANCE), cls(cls), properties{} {}
+
+    ClassObject *cls;
+    std::map<std::string, EvaValue> properties;
+
+    EvaValue getProp(const std::string &prop)
+    {
+        if (properties.count(prop) != 0)
+            return properties[prop];
+
+        // If not in own properties, check the class object
+        return cls->getProp(prop);
+    }
+};
+
 // Heap-allocated cell.
 // Used to capture closure variables
 struct CellObject : public Object
@@ -251,6 +276,9 @@ struct FunctionObject : public Object
 #define ALLOC_CLASS(name, superClass)         \
     ((EvaValue){.type = EvaValueType::OBJECT, \
                 .object = (Object *)new ClassObject(name, superClass)})
+#define ALLOC_INSTANCE(cls)                   \
+    ((EvaValue){.type = EvaValueType::OBJECT, \
+                .object = (Object *)new InstanceObject(cls)})
 
 // Accessors
 #define AS_NUMBER(evaValue) ((double)(evaValue).number)
@@ -263,6 +291,7 @@ struct FunctionObject : public Object
 #define AS_FUNCTION(evaValue) ((FunctionObject *)(evaValue).object)
 #define AS_CELL(evaValue) ((CellObject *)(evaValue).object)
 #define AS_CLASS(evaValue) ((ClassObject *)(evaValue).object)
+#define AS_INSTANCE(evaValue) ((InstanceObject *)(evaValue).object)
 
 // Predicates
 #define IS_NUMBER(evaValue) ((evaValue).type == EvaValueType::NUMBER)
@@ -276,6 +305,7 @@ struct FunctionObject : public Object
 #define IS_FUNCTION(evaValue) IS_OBJECT_TYPE(evaValue, ObjectType::FUNCTION)
 #define IS_CELL(evaValue) IS_OBJECT_TYPE(evaValue, ObjectType::CELL)
 #define IS_CLASS(evaValue) IS_OBJECT_TYPE(evaValue, ObjectType::CLASS)
+#define IS_INSTANCE(evaValue) IS_OBJECT_TYPE(evaValue, ObjectType::INSTANCE)
 
 // Output stream
 std::string evaValueToTypeString(const EvaValue &evaValue)
@@ -311,6 +341,10 @@ std::string evaValueToTypeString(const EvaValue &evaValue)
     else if (IS_CLASS(evaValue))
     {
         return "CLASS";
+    }
+    else if (IS_INSTANCE(evaValue))
+    {
+        return "INSTANCE";
     }
     else
     {
@@ -358,6 +392,11 @@ std::string evaValueToConstantString(const EvaValue &evaValue)
     {
         auto cls = AS_CLASS(evaValue);
         ss << "class: " << cls->name;
+    }
+    else if (IS_INSTANCE(evaValue))
+    {
+        auto inst = AS_INSTANCE(evaValue);
+        ss << "instance: " << inst->cls->name;
     }
     else
     {

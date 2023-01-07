@@ -44,6 +44,11 @@
 #define OP_LOAD_CELL 0x13
 #define OP_MAKE_FUNCTION 0x14
 
+// Classes/OOP
+#define OP_NEW 0x15
+#define OP_GET_PROP 0x16
+#define OP_SET_PROP 0x17
+
 // --------------------
 #define OP_STR(op) \
     case OP_##op:  \
@@ -74,6 +79,9 @@ std::string opcodeToString(uint8_t opcode)
         OP_STR(SET_CELL);
         OP_STR(LOAD_CELL);
         OP_STR(MAKE_FUNCTION);
+        OP_STR(NEW);
+        OP_STR(GET_PROP);
+        OP_STR(SET_PROP);
     default:
         DIE << "opcodeToString: unknown opcode: " << std::hex << (int)opcode;
     }

@@ -175,6 +175,11 @@ public:
                     for (auto i = 3; i < exp.list.size(); i++)
                         analyze(exp.list[i], newScope);
                 }
+                // Property access
+                else if (op == "prop")
+                {
+                    analyze(exp.list[1], scope);
+                }
                 else
                 {
                     for (auto i = 1; i < exp.list.size(); i++)
@@ -441,36 +446,53 @@ public:
                     break;
                 }
                 // Set variables: (set x 100)
+                // or Property updates: (set (prop self x) 100)
                 else if (op == "set")
                 {
-                    auto varName = exp.list[1].string;
-                    auto opCodeSetter = scopeStack_.top()->getNameSetter(varName);
-
-                    // Set Value on top of stack
-                    gen(exp.list[2]);
-
-                    // 1. Local vars
-                    if (opCodeSetter == OP_SET_LOCAL)
+                    // Special case for property writes:
+                    if (isProp(exp.list[1]))
                     {
-                        emit(OP_SET_LOCAL);
-                        emit(co->getLocalIndex(varName));
+                        // Value:
+                        gen(exp.list[2]);
+
+                        // Instance:
+                        gen(exp.list[1].list[1]);
+
+                        // Property name:
+                        emit(OP_SET_PROP);
+                        emit(stringConstIdx(exp.list[1].list[2].string));
                     }
-                    // 2. Cell vars
-                    else if (opCodeSetter == OP_SET_CELL)
-                    {
-                        emit(OP_SET_CELL);
-                        emit(co->getCellIndex(varName));
-                    }
-                    // 3. Global vars
                     else
                     {
-                        auto globalIndex = global->getGlobalIndex(varName);
-                        if (globalIndex == -1)
+                        auto varName = exp.list[1].string;
+                        auto opCodeSetter = scopeStack_.top()->getNameSetter(varName);
+
+                        // Set Value on top of stack
+                        gen(exp.list[2]);
+
+                        // 1. Local vars
+                        if (opCodeSetter == OP_SET_LOCAL)
                         {
-                            DIE << "[EvaCompiler] Reference error: " << varName << " does not exist, cannot set it." << std::endl;
+                            emit(OP_SET_LOCAL);
+                            emit(co->getLocalIndex(varName));
                         }
-                        emit(OP_SET_GLOBAL);
-                        emit(globalIndex);
+                        // 2. Cell vars
+                        else if (opCodeSetter == OP_SET_CELL)
+                        {
+                            emit(OP_SET_CELL);
+                            emit(co->getCellIndex(varName));
+                        }
+                        // 3. Global vars
+                        else
+                        {
+                            auto globalIndex = global->getGlobalIndex(varName);
+                            if (globalIndex == -1)
+                            {
+                                DIE << "[EvaCompiler] Reference error: " << varName << " does not exist, cannot set it." << std::endl;
+                            }
+                            emit(OP_SET_GLOBAL);
+                            emit(globalIndex);
+                        }
                     }
                 }
                 // Blocks/environments/scopes/closures (begin <body>)
@@ -561,15 +583,11 @@ public:
 
                     // Put the class on our constants pool
                     co->addConstant(cls);
-                    // emit(OP_CONST);
-                    // emit(co->constants.size() - 1);
 
                     // Set as a global
                     global->define(name);
                     // And pre-install to the global:
                     global->set(global->getGlobalIndex(name), cls);
-                    // emit(OP_SET_GLOBAL);
-                    // emit(global->getGlobalIndex(name));
 
                     // To compile the class body we set the current compiling
                     // class, so the defined methods are stored on the class.
@@ -585,6 +603,48 @@ public:
                         scopeStack_.pop();
                         classObject_ = prevClassObject;
                     }
+
+                    // Update the constructor to explicitly return 'self'
+                    // which is the argument at index 1
+                    auto constrFn = AS_FUNCTION(classObject->getProp("constructor"));
+                    constrFn->co->insertAtOffset(-3, OP_POP);
+                    constrFn->co->insertAtOffset(-3, OP_GET_LOCAL);
+                    constrFn->co->insertAtOffset(-3, 1);
+                }
+                // New operator (instances of classes)
+                else if (op == "new")
+                {
+                    auto className = exp.list[1].string;
+                    auto cls = getClassByName(className);
+
+                    if (cls == nullptr)
+                        DIE << "[EvaCompiler]: Unknown class " << className;
+
+                    // Load class
+                    emit(OP_GET_GLOBAL);
+                    emit(global->getGlobalIndex(className));
+
+                    // New instance
+                    emit(OP_NEW);
+
+                    // NOTE: After the OP_NEW, the constructor function
+                    // and the created instance are on top of the stack
+                    for (auto i = 2; i < exp.list.size(); i++)
+                        gen(exp.list[i]);
+
+                    // Call the constructor
+                    emit(OP_CALL);
+                    emit(AS_FUNCTION(cls->getProp("constructor"))->co->arity);
+                }
+                // Property access
+                else if (op == "prop")
+                {
+                    // Instance:
+                    gen(exp.list[1]);
+
+                    // Property name:
+                    emit(OP_GET_PROP);
+                    emit(stringConstIdx(exp.list[2].string));
                 }
                 // Named function calls
                 else
@@ -890,6 +950,9 @@ private:
 
     // Check if Exp is a lambda (lambda ...)
     bool isLambda(const Exp &exp) { return isTaggedList(exp, "lambda"); }
+
+    // (prop ...)
+    bool isProp(const Exp &exp) { return isTaggedList(exp, "prop"); }
 
     // Blocks
     bool isBlock(const Exp &exp)

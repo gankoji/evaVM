@@ -7,3 +7,4 @@
 #include "localvars.h"
 #include "functions.h"
 #include "closures.h"
+#include "classes.h"
