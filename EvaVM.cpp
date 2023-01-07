@@ -1,38 +1,48 @@
+#include <fstream>
 #include <iostream>
+#include <string>
 
 #include "src/vm/EvaVM.h"
 #include "src/vm/Logger.h"
 
+void printHelp()
+{
+    std::cout << "\nUsage: eva-em [options]\n\n"
+              << "Options:\n"
+              << "    -e, Expression to parse\n"
+              << "    -f, File to parse\n\n";
+}
+
 // Eva VM main executable
 int main(int argc, char const *argv[])
 {
+    if (argc != 3)
     {
-        EvaVM vm;
-
-        auto result = vm.exec(R"(
-            (class Point null
-                (def constructor (self x y)
-                    (begin
-                        (set (prop self x) x)
-                        (set (prop self y) y)
-                        ))
-                (def calc (self)
-                    (+ (prop self x) (prop self y))))
-                    
-            (class Point3D Point
-                (def constructor (self x y z)
-                    (begin
-                        ((prop (super Point3D) constructor) self x y)
-                        (set (prop self z) z)))
-                        
-                (def calc (self)
-                    (+ ((prop (super Point3D) calc) self) (prop self z))))
-
-            (var p (new Point3D 10 20 30))
-            ((prop p calc) p) // 60
-        )");
-        log(result);
+        printHelp();
+        return 0;
     }
+
+    // Evaluation mode
+    std::string mode = argv[1];
+
+    // Program to execute
+    std::string program;
+
+    // If its a simple expression on the command line
+    if (mode == "-e")
+        program = argv[2];
+    else if (mode == "-f")
+    {
+        std::ifstream programFile(argv[2]);
+        std::stringstream buffer;
+        buffer << programFile.rdbuf() << std::endl;
+
+        program = buffer.str();
+    }
+    EvaVM vm;
+    auto result = vm.exec(program);
+
+    log(result);
 
     return 0;
 }
