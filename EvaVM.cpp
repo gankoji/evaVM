@@ -10,26 +10,16 @@ int main(int argc, char const *argv[])
         EvaVM vm;
 
         Traceable::printStats();
-
         auto result = vm.exec(R"(
-        // --- Garbage Collection (GC) ----
-        // 1. Tracing heap
-        // 2. GC roots (globals, constants, variables on the stack)
-        // 3. Mark-Sweep GC algorithm
-        (+ "hello" ", world") // leaking "hello, world" string
-        (+ "hello" ", world")
-        (+ "hello" ", world")
-        (+ "hello" ", world")
-        (+ "hello" ", world")
-        (+ "hello" ", world")
-        (+ "hello" ", world")
-        (+ "hello" ", world")
-        (+ "hello" ", world")
-        (+ "hello" ", world")
-        (+ "hello" ", world")
-        (+ "hello" ", world")
+            (class Point null
+                (def constructor (self x y)
+                    (begin
+                        (set (prop self x) x)
+                        (set (prop self y) y)
+                        self))
+                (def calc (self)
+                    (+ (prop self x) (prop self y))))
         )");
-
         log(result);
 
         Traceable::printStats();

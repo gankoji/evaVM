@@ -522,6 +522,20 @@ public:
                         /* params */ exp.list[1],
                         /* body */ exp.list[2]);
                 }
+                // Classes (class <name> <super> <body>)
+                else if (op == "class")
+                {
+                    auto name = exp.list[1].string;
+
+                    auto superClass = exp.list[2].string == "null"
+                                          ? nullptr
+                                          : getClassByName(exp.list[2].string);
+
+                    auto cls = ALLOC_CLASS(name, superClass);
+                    auto classObject = AS_CLASS(cls);
+
+                    classObjects_.push_back(classObject);
+                }
                 // Named function calls
                 else
                 {
